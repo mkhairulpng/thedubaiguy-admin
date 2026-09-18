@@ -55,6 +55,7 @@ module.exports = async function handler(req, res) {
       case 'customers': fn = load('customers.js'); break;
       case 'aura': fn = load('aura.js'); break;
       case 'sync': fn = load('sync.js'); break;
+      case 'analytics': fn = load('analytics.js'); break;
       case 'auth/login': fn = load('auth/login.js'); break;
       case 'auth/logout': fn = load('auth/logout.js'); break;
       case 'auth/me': fn = load('auth/me.js'); break;
