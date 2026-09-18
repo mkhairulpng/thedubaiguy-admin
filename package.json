@@ -1,0 +1,14 @@
+{
+  "name": "thedubaiguy-admin-v254",
+  "private": true,
+  "version": "254.0.2",
+  "description": "TheDubaiGuy Admin v254 \u2014 final Vercel Hobby-compatible admin package with explicit API routes and Safari-safe authentication",
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "pg": "^8.16.3",
+    "stripe": "^18.5.0",
+    "@google-analytics/data": "^5.2.1"
+  }
+}
