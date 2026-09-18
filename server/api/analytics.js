@@ -1,0 +1,113 @@
+const { BetaAnalyticsDataClient } = require('@google-analytics/data');
+const { requireAdmin } = require('./auth/_auth.js');
+
+function credentials() {
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+  if (!clientEmail || !privateKey) {
+    const err = new Error('Google Analytics credentials are not configured');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  return {
+    client_email: clientEmail,
+    private_key: privateKey.replace(/\\n/g, '\n')
+  };
+}
+
+function propertyName() {
+  const id = String(process.env.GA_PROPERTY_ID || '').trim();
+
+  if (!/^\d+$/.test(id)) {
+    const err = new Error('GA_PROPERTY_ID is not configured correctly');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  return `properties/${id}`;
+}
+
+function firstMetricValue(report, index) {
+  const values = report?.rows?.[0]?.metricValues || [];
+  return Number(values[index]?.value || 0);
+}
+
+module.exports = async function handler(req, res) {
+  if (!requireAdmin(req, res)) return;
+
+  if (req.method !== 'GET') {
+    res.statusCode = 405;
+    res.setHeader('Allow', 'GET');
+    return res.end(JSON.stringify({ error: 'Method not allowed' }));
+  }
+
+  try {
+    const client = new BetaAnalyticsDataClient({
+      credentials: credentials()
+    });
+
+    const property = propertyName();
+
+    const [report] = await client.runReport({
+      property,
+      dateRanges: [
+        {
+          startDate: '7daysAgo',
+          endDate: 'today'
+        }
+      ],
+      metrics: [
+        { name: 'activeUsers' },
+        { name: 'newUsers' },
+        { name: 'sessions' },
+        { name: 'screenPageViews' },
+        { name: 'eventCount' },
+        { name: 'engagementRate' },
+        { name: 'ecommercePurchases' },
+        { name: 'totalRevenue' }
+      ]
+    });
+
+    let realtimeUsers = 0;
+
+    if (typeof client.runRealtimeReport === 'function') {
+      const [realtime] = await client.runRealtimeReport({
+        property,
+        metrics: [{ name: 'activeUsers' }]
+      });
+      realtimeUsers = firstMetricValue(realtime, 0);
+    }
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, max-age=60');
+
+    return res.end(JSON.stringify({
+      propertyId: String(process.env.GA_PROPERTY_ID),
+      measurementId: process.env.GA_MEASUREMENT_ID || null,
+      period: '7days',
+      activeUsers: firstMetricValue(report, 0),
+      newUsers: firstMetricValue(report, 1),
+      sessions: firstMetricValue(report, 2),
+      pageViews: firstMetricValue(report, 3),
+      eventCount: firstMetricValue(report, 4),
+      engagementRate: firstMetricValue(report, 5),
+      ecommercePurchases: firstMetricValue(report, 6),
+      totalRevenue: firstMetricValue(report, 7),
+      realtimeUsers,
+      source: 'Google Analytics Data API'
+    }));
+  } catch (error) {
+    console.error('Google Analytics API error:', error);
+
+    res.statusCode = error.statusCode || 500;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    return res.end(JSON.stringify({
+      error: error.message || 'Google Analytics request failed',
+      source: 'Google Analytics Data API'
+    }));
+  }
+};
