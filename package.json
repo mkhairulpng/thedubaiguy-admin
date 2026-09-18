@@ -1,0 +1,14 @@
+{
+  "name": "thedubaiguy-admin-v254",
+  "private": true,
+  "version": "255.0.0",
+  "description": "TheDubaiGuy Admin v255 \u2014 Hobby-plan compatible single Vercel API function, simple-password authentication, observability and GA4 Data API",
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "pg": "^8.16.3",
+    "stripe": "^18.5.0",
+    "@google-analytics/data": "^5.2.1"
+  }
+}
