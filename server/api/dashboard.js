@@ -1,2 +1,0 @@
-const fs=require('fs');const path=require('path');const {isAdmin}=require('./auth/_auth');
-module.exports=(req,res)=>{if(!isAdmin(req)){res.writeHead(302,{Location:'/'});return res.end()}const html=fs.readFileSync(path.join(process.cwd(),'public','dashboard.html'),'utf8');res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','private, no-store');res.status(200).send(html)};
