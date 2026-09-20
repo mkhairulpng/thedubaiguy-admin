@@ -96,9 +96,9 @@ img[alt*="TheDubaiGuy" i],
 img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
 
 /* Aura marks inside cards/trays stay compact and unobtrusive */
-.tdg-aura-logo-compact{width:42px!important;height:42px!important;max-width:42px!important;max-height:42px!important;object-fit:contain!important}
-.tdg-aura-logo-compact *{max-width:42px!important;max-height:42px!important}
-.tdg-aura-side-logo-compact{width:30px!important;height:30px!important;max-width:30px!important;max-height:30px!important;object-fit:contain!important}
+.tdg-aura-logo-compact{width:74px!important;height:74px!important;max-width:74px!important;max-height:74px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
+.tdg-aura-logo-compact *{max-width:74px!important;max-height:74px!important}
+.tdg-aura-side-logo-compact{width:53px!important;height:53px!important;max-width:53px!important;max-height:53px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
 
 /* Remove the separate Aura logo sitting above the side tray; keep the tray itself */
 .tdg-aura-side-logo-top-remove{display:none!important}
