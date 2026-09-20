@@ -1,1 +1,0 @@
-This file triggers the POS inventory image workflow. It can be removed after the patch commits.
