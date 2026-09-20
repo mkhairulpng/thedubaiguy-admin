@@ -53,6 +53,7 @@ module.exports = async function handler(req, res) {
       case 'aura': fn = load('aura.js'); break;
       case 'sync': fn = load('sync.js'); break;
       case 'analytics': fn = load('analytics.js'); break;
+      case 'live': fn = load('live.js'); break;
       case 'pos': fn = load('pos.js'); break;
       case 'auth/login': fn = load('auth/login.js'); break;
       case 'auth/logout': fn = load('auth/logout.js'); break;
