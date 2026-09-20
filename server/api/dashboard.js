@@ -477,33 +477,23 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){replaceAuraWordmarks()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-
-  const liveDashboardPatch=String.raw\`
+  const liveDashboardPatch=String.raw`
 <style id="tdg-live-dashboard-data">
-.tdg-live-fresh{font-size:10px!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:rgba(255,255,255,.48)!important;margin-top:6px!important}
-.tdg-live-dot{display:inline-block!important;width:7px!important;height:7px!important;border-radius:50%!important;background:#54d88a!important;box-shadow:0 0 8px rgba(84,216,138,.55)!important;margin-right:6px!important}
 .tdg-live-error{color:#ff9b9b!important}
+.tdg-live-fresh{font-size:10px!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:rgba(255,255,255,.48)!important;margin-top:6px!important}
 </style>
 <script>
 (function(){
-  function norm(s){return String(s||'').replace(/\\s+/g,' ').trim().toLowerCase()}
-  function text(el){return(el&&el.innerText||el&&el.textContent||'').replace(/\\s+/g,' ').trim()}
-  function leaf(card,re){return[...card.querySelectorAll('*')].find(function(x){return!x.children.length&&re.test(text(x))})}
-  function cardFor(label){
-    const n=[...document.querySelectorAll('body *')].find(function(x){return!x.children.length&&norm(text(x))===norm(label)});
-    if(!n)return null;
-    let p=n;
-    for(let i=0;i<8&&p;i++,p=p.parentElement){
-      const r=p.getBoundingClientRect(),t=text(p);
-      if(r.width>=240&&r.height>=100&&r.height<=500&&t.length<900)return p;
-    }
-    return n.parentElement;
+  function text(el){return (el&&el.innerText||el&&el.textContent||'').replace(/\s+/g,' ').trim()}
+  function findCard(label){
+    const needle=String(label).toLowerCase();
+    const leaf=[...document.querySelectorAll('body *')].find(function(el){return !el.children.length&&text(el).toLowerCase()===needle});
+    if(!leaf)return null;
+    let p=leaf;
+    for(let i=0;i<8&&p;i++,p=p.parentElement){const r=p.getBoundingClientRect();if(r.width>=220&&r.height>=90&&r.height<=500&&text(p).length<900)return p}
+    return leaf.parentElement;
   }
-  function setLeaf(card,re,value,extraClass){
-    const el=leaf(card,re);if(!el)return;
-    el.textContent=value;
-    if(extraClass)el.classList.add(extraClass);
-  }
+  function leaf(card,re){return card?[...card.querySelectorAll('*')].find(function(el){return !el.children.length&&re.test(text(el))}):null}
   function money(n){return 'S
 }
 
@@ -516,52 +506,25 @@ module.exports=(req,res)=>{
 };
 +Number(n||0).toFixed(2)}
   function tx(n){return Number(n||0)+' transactions'}
-  async function scriptUp(path){
-    try{const r=await fetch(path,{method:'GET',cache:'no-store'});return r.ok}catch(e){return false}
-  }
-  async function refreshLive(){
+  function set(card,re,value,cls){const el=leaf(card,re);if(!el)return;el.textContent=value;if(cls)el.classList.add(cls)}
+  async function refresh(){
     try{
-      const d=await (await fetch('/api/live',{credentials:'same-origin',cache:'no-store'})).json();
-      const settlements=cardFor("Today's settlements");
-      if(settlements){
-        setLeaf(settlements,/^S\\$[\\d,.-]+$/i,money(d.today?.total?.amount));
-        setLeaf(settlements,/^\\d+ transactions$/i,tx(d.today?.total?.count));
-      }
-      for(const item of [
-        ['NETS','nets'],['PAYNOW','paynow'],['stripe','stripe']
-      ]){
-        const card=cardFor(item[0]);if(!card)continue;
+      const response=await fetch('/api/live',{credentials:'same-origin',cache:'no-store'});
+      const d=await response.json();
+      const total=findCard("Today's settlements");
+      if(total){set(total,/^S\$[\d,.-]+$/i,money(d.today?.total?.amount));set(total,/^\d+ transactions$/i,tx(d.today?.total?.count))}
+      for(const item of [['NETS','nets'],['PAYNOW','paynow'],['STRIPE','stripe']]){
+        const card=findCard(item[0]);
         const v=d.today?.[item[1]]||{};
-        setLeaf(card,/^S\\$[\\d,.-]+$/i,money(v.amount));
-        setLeaf(card,/^\\d+ transactions$/i,tx(v.count));
-      }
-      const health=cardFor('API HEALTH');
-      if(health){
-        const ok=Boolean(d.database?.connected);
-        setLeaf(health,/^(Error|Connected)$/i,ok?'Connected':'Database not configured',ok?'':'tdg-live-error');
-        setLeaf(health,/^API \\d+$/i,ok?'API 200':'API 503',ok?'':'tdg-live-error');
-        let stamp=leaf(health,/^Last checked /i);
-        if(stamp)stamp.textContent='Last checked '+new Date(d.checkedAt).toLocaleString();
-      }
-      const wa=cardFor('Web Analytics');
-      if(wa){
-        const ok=await scriptUp('/_vercel/insights/script.js');
-        setLeaf(wa,/^(Enabled|Unavailable)$/i,ok?'Enabled':'Unavailable',ok?'':'tdg-live-error');
-      }
-      const si=cardFor('Speed Insights');
-      if(si){
-        const ok=await scriptUp('/_vercel/speed-insights/script.js');
-        setLeaf(si,/^(Enabled|Unavailable)$/i,ok?'Enabled':'Unavailable',ok?'':'tdg-live-error');
+        if(card){set(card,/^S\$[\d,.-]+$/i,money(v.amount));set(card,/^\d+ transactions$/i,tx(v.count))}
       }
       window.tdgLiveState=d;
-    }catch(e){
-      window.tdgLiveState={ok:false,error:e.message};
-    }
+    }catch(e){window.tdgLiveState={ok:false,error:String(e&&e.message||e)}}
   }
-  function boot(){refreshLive();setInterval(refreshLive,30000)}
+  function boot(){refresh();window.setInterval(refresh,30000)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
-</script>\`;
+</script>`;
 
   return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+liveDashboardPatch+'</body>');
 }
