@@ -169,7 +169,65 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){compactDashboard()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>',patch+auraPatch+compactPatch+'</body>');
+  const layoutPatch=String.raw`
+<style id="tdg-settlement-aura-layout">
+/* Keep the Aura panel aligned with the surrounding dashboard boxes */
+.tdg-aura-aligned-box{align-self:stretch!important;height:100%!important;box-sizing:border-box!important}
+
+/* Today's Settlement payment boxes: logo/payment name left, amount right */
+.tdg-settlement-payment-box{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;min-height:58px!important;box-sizing:border-box!important}
+.tdg-settlement-payment-left{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
+.tdg-settlement-payment-left img,.tdg-settlement-payment-left svg{width:34px!important;height:34px!important;object-fit:contain!important;flex:0 0 34px!important}
+.tdg-settlement-payment-right{margin-left:auto!important;text-align:right!important;white-space:nowrap!important}
+.tdg-settlement-payment-right .amount,.tdg-settlement-payment-right [class*="amount" i]{text-align:right!important}
+</style>
+<script>
+(function(){
+  function cardForText(text){
+    const wanted=String(text).toLowerCase();
+    const all=[...document.querySelectorAll('body *')];
+    for(const el of all){
+      if(el.children.length>8)continue;
+      const own=(el.textContent||'').replace(/\\s+/g,' ').trim().toLowerCase();
+      if(!own.includes(wanted))continue;
+      const card=el.closest('[class*="card" i],[class*="panel" i],[class*="box" i],[class*="widget" i],[class*="tile" i]')||el.parentElement;
+      if(card)return card;
+    }
+    return null;
+  }
+  function settlementBox(label){
+    const card=cardForText(label);
+    if(!card)return null;
+    const parent=card.parentElement;
+    if(parent && parent.children.length<=8){
+      const siblings=[...parent.children].filter(x=>(x.textContent||'').toLowerCase().includes(label.toLowerCase()));
+      if(siblings.length===1)return siblings[0];
+    }
+    return card;
+  }
+  function align(){
+    const aura=cardForText('Aura Membership');
+    if(aura)aura.classList.add('tdg-aura-aligned-box');
+
+    ['NETS','PayNow','Stripe'].forEach(function(label){
+      const box=settlementBox(label);
+      if(!box)return;
+      box.classList.add('tdg-settlement-payment-box');
+      const children=[...box.children];
+      if(children.length>=2){
+        let left=children.find(x=>/(nets|paynow|stripe)/i.test(x.textContent||''))||children[0];
+        let right=children.find(x=>x!==left && /(?:S\\$|\\$|amount|total)/i.test(x.textContent||''))||children[children.length-1];
+        left.classList.add('tdg-settlement-payment-left');
+        right.classList.add('tdg-settlement-payment-right');
+      }
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',align,{once:true});
+  else align();
+  new MutationObserver(function(){align()}).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>`;
+  return html.replace('</body>',patch+auraPatch+compactPatch+layoutPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
