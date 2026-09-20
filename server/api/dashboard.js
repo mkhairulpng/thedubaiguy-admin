@@ -138,7 +138,38 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){polishAura()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>',patch+auraPatch+'</body>');
+  const compactPatch=String.raw`
+<style id="tdg-dashboard-compact-observability">
+/* Compact dashboard cards + OBSERVABILITY-style headings */
+.tdg-compact-box{padding:14px!important;border-radius:12px!important}
+.tdg-compact-box > h1,.tdg-compact-box > h2,.tdg-compact-box > h3,.tdg-compact-box > h4,
+.tdg-compact-box .card-title,.tdg-compact-box .panel-title,.tdg-compact-box .section-title,
+.tdg-compact-box [class*="title" i]{font-size:11px!important;line-height:1.2!important;
+  font-weight:600!important;letter-spacing:.12em!important;text-transform:uppercase!important}
+.tdg-compact-box .value,.tdg-compact-box .metric,.tdg-compact-box .kpi-value{line-height:1.05!important}
+.tdg-compact-box{gap:10px!important}
+@media(max-width:900px){.tdg-compact-box{padding:12px!important}}
+</style>
+<script>
+(function(){
+  function compactDashboard(){
+    const root=document.querySelector('main')||document.body;
+    const candidates=[...root.querySelectorAll('[class*="card" i],[class*="panel" i],[class*="widget" i],[class*="box" i],[class*="kpi" i]')];
+    candidates.forEach(function(el){
+      if(el.closest('.tdg-pos-select'))return;
+      const text=(el.innerText||'').trim();
+      if(!text || text.length>700)return;
+      const heading=el.querySelector('h1,h2,h3,h4,.card-title,.panel-title,.section-title,[class*="title" i]');
+      if(!heading)return;
+      el.classList.add('tdg-compact-box');
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',compactDashboard,{once:true});
+  else compactDashboard();
+  new MutationObserver(function(){compactDashboard()}).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>`;
+  return html.replace('</body>',patch+auraPatch+compactPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
