@@ -1,0 +1,148 @@
+name: Apply POS inventory image link
+
+on:
+  push:
+    branches:
+      - feat/pos-inventory-image-link
+
+permissions:
+  contents: write
+
+jobs:
+  patch-pos:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch POS product cards and refresh
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path("public/dashboard.html")
+          s = path.read_text(encoding="utf-8")
+
+          old = """async function tdgRenderPOS(){const box=$('tdgPOSProducts');if(!box)return;if(!tdgPOSProducts.length){try{const d=await tdgJSON('/api/products');tdgPOSProducts=Array.isArray(d?.data)?d.data:(Array.isArray(d)?d:[]);}catch(e){box.innerHTML='<div class=\\\"tdg-empty\\\">Products could not be loaded: '+htmlEscape(e.message)+'</div>';return;}}const q=String($('tdgPOSSearch')?.value||'').toLowerCase().trim();const rows=tdgPOSProducts.filter(p=>String(p.name||'').toLowerCase().includes(q)).slice(0,60);box.innerHTML=rows.map(p=>'<button class=\\\"tdg-pos-select\\\" onclick=\\\"tdgAddPOS('+JSON.stringify(String(p.id)).replace(/</g,'\\\\u003c')+')\\\"><strong>'+htmlEscape(p.name||'Product')+'</strong><div class=\\\"price\\\">S$'+Number(p.price||0).toFixed(2)+'</div><div class=\\\"stock\\\">'+Number(p.qty||0)+' in stock</div></button>').join('')||'<div class=\\\"tdg-empty\\\">No products found.</div>';tdgRenderPOSCart();}"""
+
+          if old not in s:
+              start = s.find("async function tdgRenderPOS(){")
+              end = s.find("\nfunction tdgAddPOS", start)
+              if start < 0 or end < 0:
+                  raise SystemExit("POS render function not found")
+          else:
+              start = s.find("async function tdgRenderPOS(){")
+              end = s.find("\nfunction tdgAddPOS", start)
+
+          new_render = r"""async function tdgRenderPOS(){
+            const box=$('tdgPOSProducts'); if(!box)return;
+            try{
+              const d=await tdgJSON('/api/products');
+              tdgPOSProducts=Array.isArray(d?.data)?d.data:(Array.isArray(d)?d:[]);
+            }catch(e){
+              if(!tdgPOSProducts.length){
+                box.innerHTML='<div class="tdg-empty">Products could not be loaded: '+htmlEscape(e.message)+'</div>';
+                return;
+              }
+            }
+            const q=String($('tdgPOSSearch')?.value||'').toLowerCase().trim();
+            const rows=tdgPOSProducts.filter(p=>String(p.name||'').toLowerCase().includes(q)).slice(0,60);
+            box.innerHTML=rows.map(p=>{
+              const image=tdgImage(p);
+              const stock=Number(p.qty||0);
+              const disabled=stock<=0?' disabled aria-disabled="true"':'';
+              return '<button class="tdg-pos-select"'+disabled+' onclick="tdgAddPOS('+JSON.stringify(String(p.id)).replace(/</g,'\\u003c')+')">'+
+                '<div class="tdg-pos-thumb">'+(image?'<img src="'+htmlEscape(image)+'" alt="'+htmlEscape(p.name||'Product')+'" loading="lazy" onerror="this.style.display=\'none\'">':'<span>No image</span>')+'</div>'+
+                '<strong>'+htmlEscape(p.name||'Product')+'</strong>'+
+                '<div class="price">S$'+Number(p.price||0).toFixed(2)+'</div>'+
+                '<div class="stock">'+stock+' in stock</div>'+
+              '</button>';
+            }).join('')||'<div class="tdg-empty">No products found.</div>';
+            tdgRenderPOSCart();
+          }"""
+
+          s = s[:start] + new_render + s[end:]
+
+          start = s.find("function tdgAddPOS(id){")
+          end = s.find("\nfunction tdgPOSPayment", start)
+          if start < 0 or end < 0:
+              raise SystemExit("POS add function not found")
+
+          new_add = r"""function tdgAddPOS(id){
+            const p=tdgPOSProducts.find(x=>String(x.id)===String(id)); if(!p)return;
+            const available=Math.max(0,Number(p.qty||0));
+            const existing=tdgPOSCart.find(x=>String(x.id)===String(p.id));
+            const next=(existing?.qty||0)+1;
+            if(next>available){alert('Not enough stock for '+(p.name||'this product')+'.');return;}
+            if(existing)existing.qty=next;else tdgPOSCart.push({...p,qty:1});
+            tdgRenderPOSCart();
+          }"""
+
+          s = s[:start] + new_add + s[end:]
+
+          start = s.find("function tdgPOSReset(){")
+          end = s.find("\nasync function tdgPOSCheckout", start)
+          if start < 0 or end < 0:
+              raise SystemExit("POS reset function not found")
+
+          new_reset = r"""function tdgPOSReset(){
+            tdgPOSCart=[];
+            ['tdgPOSCustomer','tdgPOSMobile','tdgPOSMembership','tdgPOSAura'].forEach(id=>{if($(id))$(id).value='';});
+            tdgPOSPayment('NETS');
+            tdgRenderPOSCart();
+          }"""
+
+          s = s[:start] + new_reset + s[end:]
+
+          start = s.find("async function tdgPOSCheckout(){")
+          end = s.find("\nfunction tdgPageRefresh", start)
+          if start < 0 or end < 0:
+              raise SystemExit("POS checkout function not found")
+
+          new_checkout = r"""async function tdgPOSCheckout(){
+            if(!tdgPOSCart.length){alert('Select at least one product.');return;}
+            const name=String($('tdgPOSCustomer')?.value||'').trim(),mobile=String($('tdgPOSMobile')?.value||'').trim(),membership=String($('tdgPOSMembership')?.value||'').trim(),aura=String($('tdgPOSAura')?.value||'').trim();
+            if(!name){alert('Enter the customer name.');return;}
+            const total=tdgPOSCart.reduce((a,p)=>a+Number(p.price||0)*Number(p.qty||1),0);
+            try{
+              const d=await tdgJSON('/api/pos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+                customer:{name,mobile},membership_id:membership,aura_membership:aura,
+                items:tdgPOSCart.map(p=>({id:String(p.id),qty:Number(p.qty||1),size:'',color:''})),
+                payment_method:tdgPOSSelectedPayment,total
+              })});
+              alert('Sale completed: '+String(d?.data?.order_number||'Created')+' · S$'+Number(d?.data?.total||total).toFixed(2)+' · '+tdgPOSSelectedPayment);
+              tdgPOSReset();
+              await tdgLoadProducts();
+              tdgPOSProducts=[];
+              await tdgRenderPOS();
+            }catch(e){alert('POS sale could not be completed: '+e.message);}
+          }"""
+
+          s = s[:start] + new_checkout + s[end:]
+
+          marker = "/* POS inventory-linked product images */"
+          if marker not in s:
+              s += r"""
+<style id="tdg-pos-inventory-images">
+/* POS inventory-linked product images */
+.tdg-pos-select{display:flex;flex-direction:column;align-items:stretch;gap:5px;overflow:hidden}
+.tdg-pos-thumb{width:100%;height:145px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:3px}
+.tdg-pos-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.tdg-pos-thumb span{font-size:10px;color:var(--muted)}
+.tdg-pos-select:disabled{opacity:.48;cursor:not-allowed}
+@media(max-width:1000px){.tdg-pos-thumb{height:130px}}
+@media(max-width:600px){.tdg-pos-thumb{height:180px}}
+</style>
+"""
+          path.write_text(s, encoding="utf-8")
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/dashboard.html
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: link POS to inventory images and stock"
+          git push
