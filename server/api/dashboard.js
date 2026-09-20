@@ -348,7 +348,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
 })();
 </script>`;
 
-  const netsSettlementPatch=String.raw\`
+  const netsSettlementPatch=String.raw`
 <style id="tdg-nets-settlement-layout">
 /* NETS settlement card: logo left, transactions underneath, amount on right. */
 .tdg-nets-settlement{position:relative!important;box-sizing:border-box!important;overflow:hidden!important}
@@ -410,7 +410,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   else arrangeNETS();
   new MutationObserver(function(){arrangeNETS()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
-</script>\`;
+</script>`;
   return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+'</body>');
 }
 
