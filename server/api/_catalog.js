@@ -1,4 +1,4 @@
-const catalog = require('../data/products.json');
+const catalog = require('../../data/products.json');
 
 async function seedCatalog(db) {
   const { rows } = await db.query('SELECT COUNT(*)::int AS count FROM products');
