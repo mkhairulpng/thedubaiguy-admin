@@ -584,12 +584,17 @@ module.exports=(req,res)=>{
 (function(){
   function esc(v){return htmlEscape(String(v==null?'':v))}
   function findObservability(){
-    const all=[...document.querySelectorAll('body *')];
-    return all.find(function(el){
+    const candidates=[...document.querySelectorAll('section,article,aside,div')].filter(function(el){
       if(el.children.length<1)return false;
       const t=(el.innerText||'').replace(/\s+/g,' ').trim();
       return t.length<1800 && /OBSERVABILITY/i.test(t) && (/Web Analytics/i.test(t)||/Speed Insights/i.test(t));
     });
+    /* Use the smallest matching container so only the existing Observability
+       panel is amended; never replace the dashboard/main container. */
+    candidates.sort(function(a,b){
+      return (a.innerText||'').length-(b.innerText||'').length;
+    });
+    return candidates[0]||null;
   }
   function render(d){
     const host=findObservability();if(!host)return;
