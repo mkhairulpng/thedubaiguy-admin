@@ -477,7 +477,155 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){replaceAuraWordmarks()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+'</body>');
+
+
+  const posCatalogPatch=String.raw\`
+<style id="tdg-pos-category-catalog">
+.tdg-pos-category-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.tdg-pos-category-tabs button{border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);border-radius:999px;padding:8px 13px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.tdg-pos-category-tabs button.active{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28)}
+.tdg-pos-category-note{font-size:10px;color:var(--muted);margin:0 0 10px}
+.tdg-pos-category-empty{padding:20px;text-align:center;color:var(--muted);font-size:12px}
+</style>
+<script>
+(function(){
+  const catalog=[{"id":"atlantis-abaya","name":"Atlantis Abaya","cat":"women","subcat":"abaya","price":180,"badge":"New","collection":"Atlantis Collection","imgs":["atlantis_coral"],"sizes":["52","54","56","58","60"],"colors":[{"name":"Coral","img":"atlantis_coral","price":220},{"name":"Sand","img":"atlantis_sandy","price":180},{"name":"Sea Breeze","img":"atlantis_breeze","price":180}],"lede":"An open-front abaya from the Atlantis Collection, hand-illustrated with an underwater world of turtles, seahorses and coral. Available in three shades.","details":"A flowing open-front abaya printed with an exclusive watercolour reef. Wide sleeves, fluid drape and a clean centre opening, with signature THEDUBAIGUY detail at the cuff. Choose Coral (warm terracotta), Sand (soft neutral) or Sea Breeze (cool aqua).","material":"Premium silk-touch satin · Open front · Dry clean only · Atlantis Collection"},{"id":"batik-cempaka-abaya","name":"Batik Cempaka Silk Satin Abaya Set","cat":"women","price":170,"badge":"New","imgs":["cempaka_1","cempaka_2","cempaka_4","cempaka_3"],"sizes":["52","54","56","58","60"],"lede":"A flowing kaftan-cut abaya in premium silk satin, printed with the blue-and-cream Cempaka batik and finished with a matching shawl.","details":"Cut from lustrous premium silk satin with a graceful kaftan silhouette and wide sleeves. Supplied as a two-piece set — abaya and matching batik shawl. Exclusive hand-drawn Cempaka batik print in indigo, slate and cream.","material":"100% Premium Silk Satin · Dry clean only · Two-piece set (abaya + shawl)"},{"id":"batik-nusantara-abaya","name":"Batik Nusantara Silk Satin Abaya Set","cat":"women","price":170,"badge":"New","imgs":["nusantara_1","nusantara_2"],"sizes":["52","54","56","58","60"],"lede":"An heirloom navy-and-copper batik abaya in silk satin, with an ornamented placket and matching shawl.","details":"A richly patterned abaya in deep navy with copper and cream batik motifs and a decorative centre placket. Flowing silk satin drape with wide sleeves. Supplied with a coordinating batik shawl.","material":"100% Premium Silk Satin · Dry clean only · Two-piece set (abaya + shawl)"},{"id":"cempaka-shawl","name":"Batik Cempaka Silk Satin Shawl","cat":"women","price":79,"imgs":["cempaka_3","cempaka_1"],"sizes":["One Size"],"lede":"The signature Cempaka batik shawl in soft silk satin — the perfect finishing layer.","details":"Generously sized silk satin shawl in the blue-and-cream Cempaka batik. Fluid drape that ties and wraps beautifully. Pairs with the Cempaka abaya or worn on its own.","material":"100% Premium Silk Satin · Approx. 180 × 70 cm · Dry clean only"},{"id":"nusantara-shawl","name":"Batik Nusantara Silk Satin Shawl","cat":"women","price":79,"imgs":["nusantara_2","nusantara_1"],"sizes":["One Size"],"lede":"The Nusantara batik shawl in silk satin — navy, copper and cream.","details":"A luxuriously soft silk satin shawl carrying the Nusantara batik motif. A versatile modest layer that complements the abaya or elevates any outfit.","material":"100% Premium Silk Satin · Approx. 180 × 70 cm · Dry clean only"},{"id":"lumiere-abaya","name":"Lumière Embellished Abaya","cat":"women","subcat":"abaya","price":260,"soldout":true,"collection":"Lumière Collection","imgs":["lumiere_black"],"sizes":["52","54","56","58","60"],"colors":[{"name":"Black","img":"lumiere_black"},{"name":"Rose","img":"lumiere_rose"},{"name":"Powder Blue","img":"lumiere_blue"}],"lede":"An open-front abaya scattered with hand-set pearl and crystal florals, from the Lumière Collection. Available in three shades.","details":"A softly draping open-front abaya adorned with hand-placed pearl and crystal floral clusters across the body and a jewelled neckline. From the Lumière Collection — occasion dressing at its most refined. Available in Black, Rose and Powder Blue.","material":"Premium crêpe · Hand-embellished pearl & crystal detail · Dry clean only · Lumière Collection"},{"id":"tw-jardin","name":"Longline Outerwear — Jardin","cat":"women","subcat":"travelwear","price":150,"soldout":true,"imgs":["tw_jardin"],"sizes":["S","M","L","XL"],"lede":"A fluid charcoal open outerwear with trailing botanical embroidery and contrast piping — effortless layering for travel.","details":"A lightweight, longline open abaya-coat in soft charcoal, framed with cascading leaf embroidery on the shoulders and cuffs and finished with delicate contrast piping. Designed to layer over any outfit.","material":"Lightweight woven · Open front · Machine wash cold · Travel Wear"},{"id":"tw-jardin-2","name":"Longline Outerwear — Jardin II","cat":"women","subcat":"travelwear","price":150,"soldout":true,"imgs":["tw_jardin2"],"sizes":["S","M","L","XL"],"lede":"The Jardin outerwear in ivory, with gold-and-blue botanical embroidery — light, airy and elegant.","details":"An ivory longline open outerwear with trailing gold and blue leaf embroidery across the shoulders and sleeves. A graceful, breathable layer for warm-weather travel.","material":"Lightweight woven · Open front · Machine wash cold · Travel Wear"},{"id":"tw-mosaic","name":"Longline Outerwear — Mosaic","cat":"women","subcat":"travelwear","price":140,"soldout":true,"imgs":["tw_mosaic"],"sizes":["S","M","L","XL"],"lede":"A relaxed white outerwear with pink-and-blue geometric mosaic embroidery and a tie waist.","details":"A breezy longline open jacket in white linen-touch fabric, patterned with a pink and blue mosaic embroidery down the front and cuffs, with an optional tie belt and side pockets.","material":"Linen-touch woven · Open front · Tie belt · Machine wash cold · Travel Wear"},{"id":"tw-toile","name":"Heritage Toile Co-ord Set","cat":"women","subcat":"travelwear","price":160,"soldout":true,"imgs":["tw_toile"],"sizes":["S","M","L","XL"],"lede":"A relaxed kimono-and-trouser co-ord in a hand-drawn architectural toile print.","details":"A two-piece travel co-ord — a belted kimono jacket and wide-leg trousers — in a soft ivory ground with a hand-illustrated heritage toile of domes, arches and palms.","material":"Soft viscose blend · Two-piece set · Machine wash cold · Travel Wear"},{"id":"tw-satin-buttercream","name":"Satin Co-ord Set — Buttercream","cat":"women","subcat":"travelwear","price":140,"soldout":true,"imgs":["tw_satin_yellow"],"sizes":["S","M","L","XL"],"lede":"A liquid-satin kimono and wide-leg trouser set in soft buttercream — quietly luxurious.","details":"A fluid satin two-piece — belted kimono and wide-leg trousers — in a soft buttercream tone. Relaxed, elegant and made to move.","material":"Satin · Two-piece set · Belted · Dry clean recommended · Travel Wear"},{"id":"tw-satin-blue","name":"Satin Co-ord Set — Powder Blue","cat":"women","subcat":"travelwear","price":140,"soldout":true,"imgs":["tw_satin_blue"],"sizes":["S","M","L","XL"],"lede":"The satin co-ord in a serene powder blue — kimono and wide-leg trousers.","details":"A fluid satin two-piece — belted kimono and wide-leg trousers — in a calming powder blue. Effortless resort and travel dressing.","material":"Satin · Two-piece set · Belted · Dry clean recommended · Travel Wear"},{"id":"kanzu-thobe-sage","name":"Kanzu Embroidered Thobe — Sage","cat":"men","price":89,"soldout":true,"imgs":["men_thobe"],"sizes":["52","54","56","58","60"],"lede":"A relaxed half-sleeve thobe in soft sage, finished with hand-detailed olive embroidery at the placket and cuffs.","details":"Cut for an easy, elegant drape with a mandarin split neckline and a decorative embroidered placket. Half sleeves with matching embroidered trim and side pockets. A refined everyday thobe for warm climates.","material":"Premium poly-cotton blend · Machine wash cold · Half sleeve · Side pockets","addons":["addon-egyptian-tshirt","addon-cotton-bottoms"]},{"id":"kanzu-thobe-cream","name":"Kanzu Thobe — Pure Cream","cat":"men","price":89,"soldout":true,"imgs":["men_thobe_cream"],"sizes":["52","54","56","58","60"],"lede":"A clean half-sleeve thobe in pure cream linen-touch, with a subtle tonal embroidered placket.","details":"An understated everyday thobe in soft cream with a mandarin split neckline and delicate tone-on-tone embroidery at the placket. Half sleeves and discreet side pockets — effortless for warm days and relaxed evenings.","material":"Premium linen-touch blend · Machine wash cold · Half sleeve · Side pockets","addons":["addon-egyptian-tshirt","addon-cotton-bottoms"]},{"id":"takhayal-edp","name":"Takhayal Eau de Parfum 50ml","cat":"perfumes","price":75,"badge":"Bestseller","imgs":["perfume_takhayal","banner_takhayal"],"sizes":["50ml"],"lede":"","details":"Takhayal opens on velvety Taif rose, settling into a heart of creamy sandalwood before a deep agarwood (oud) drydown. Long-lasting eau de parfum concentration. Unisex.","material":"Eau de Parfum · 50ml · Notes: Rose, Sandalwood, Agarwood (Oud)"},{"id":"dhahabi-edp","name":"Dhahabi Eau de Parfum 50ml","cat":"perfumes","price":65,"imgs":["perfume_dhahabi"],"sizes":["50ml"],"lede":"","details":"A golden amber composition lifted by saffron and warm spice, wrapped around resins and precious woods for a rich, glowing trail. Long-lasting eau de parfum. Unisex.","material":"Eau de Parfum · 50ml · Notes: Amber, Saffron, Precious Woods"},{"id":"sandalwood-oud-30","name":"Sandalwood Oud Incense — Pack of 30","cat":"home","price":35,"badge":"Bestseller","imgs":["incense"],"sizes":["Pack of 30"],"lede":"Hand-rolled sandalwood and oud incense sticks to fill your home with a warm, resinous calm.","details":"Slow-burning incense sticks blended with sandalwood and oud. Each stick burns for approximately 45 minutes. Pack of 30, in signature paper wrap.","material":"30 incense sticks · Sandalwood & Oud · ~45 min burn time"},{"id":"sandalwood-oud-60","name":"Sandalwood Oud Incense — Pack of 60","cat":"home","price":65,"imgs":["incense"],"sizes":["Pack of 60"],"lede":"Our sandalwood and oud incense in a generous value pack of 60 sticks.","details":"The same slow-burning sandalwood-and-oud incense, in a larger pack of 60 sticks. Ideal for daily ritual or gifting.","material":"60 incense sticks · Sandalwood & Oud · ~45 min burn time"},{"id":"bukhoor-home-incense","name":"Bukhoor Home Incense","cat":"home","price":45,"soldout":true,"imgs":["incense"],"sizes":["50g","100g"],"lede":"Traditional bakhoor — fragrant wood chips blended with resins and oud, to perfume your home for gatherings and everyday calm.","details":"Hand-blended bukhoor (bakhoor) of scented wood chips, natural resins and oud. Warm on a charcoal disc or electric burner and let the fragrance fill the room. A cherished ritual of welcome across the Gulf and Southeast Asia.","material":"Bakhoor wood-chip incense · Burn on charcoal or electric burner · Contains oud & resins"}];
+  const cats=[['all','All'],['men','Men'],['women','Women'],['perfumes','Perfume'],['home','Home']];
+  function boot(){
+    const box=$('tdgPOSProducts');
+    if(!box)return;
+    if(window.tdgPOSCatalogFallback)return;
+    window.tdgPOSCatalogFallback=catalog.map(function(p){return Object.assign({},p,{qty:p.soldout?0:10,images:p.imgs||[]})});
+    window.tdgPOSCategory='all';
+    function imageFor(p){return typeof tdgImage==='function'?tdgImage(p):(p.imgs&&p.imgs[0]||'')}
+    function install(){
+      const box=$('tdgPOSProducts');if(!box)return;
+      if(!document.getElementById('tdgPOSCategoryTabs')){
+        const tabs=document.createElement('div');tabs.id='tdgPOSCategoryTabs';tabs.className='tdg-pos-category-tabs';
+        cats.forEach(function(c){
+          const b=document.createElement('button');b.type='button';b.dataset.cat=c[0];b.textContent=c[1];
+          b.onclick=function(){window.tdgPOSCategory=c[0];tabs.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');window.tdgRenderPOS()};
+          tabs.appendChild(b);
+        });
+        box.parentElement.insertBefore(tabs,box);
+        tabs.firstChild.classList.add('active');
+      }
+      if(!document.getElementById('tdgPOSCategoryNote')){
+        const note=document.createElement('div');note.id='tdgPOSCategoryNote';note.className='tdg-pos-category-note';
+        note.textContent='Categories use the same product catalog as Products.';
+        box.parentElement.insertBefore(note,box);
+      }
+    }
+    const original=window.tdgRenderPOS;
+    window.tdgRenderPOS=async function(){
+      install();
+      try{
+        const d=await tdgJSON('/api/products');
+        if(Array.isArray(d&&d.data)&&d.data.length){tdgPOSProducts=d.data}
+        else throw new Error('Product API returned no products');
+      }catch(e){
+        tdgPOSProducts=window.tdgPOSCatalogFallback.slice();
+      }
+      const q=String($('tdgPOSSearch')&&$('tdgPOSSearch').value||'').toLowerCase().trim();
+      const cat=window.tdgPOSCategory||'all';
+      const rows=tdgPOSProducts.filter(function(p){
+        const pc=String(p.category||p.cat||'').toLowerCase();
+        return (cat==='all'||pc===cat) && String(p.name||'').toLowerCase().includes(q);
+      }).slice(0,100);
+      box.innerHTML=rows.map(function(p){
+        const image=imageFor(p), stock=Number(p.qty||0), disabled=stock<=0?' disabled aria-disabled="true"':'';
+        return '<button class="tdg-pos-select"'+disabled+' onclick="tdgAddPOS('+JSON.stringify(String(p.id)).replace(/</g,'\\u003c')+')">'+
+          '<div class="tdg-pos-thumb">'+(image?'<img src="'+htmlEscape(image)+'" alt="'+htmlEscape(p.name||'Product')+'" loading="lazy" onerror="this.style.display=\\'none\\'">':'<span>No image</span>')+'</div>'+
+          '<strong>'+htmlEscape(p.name||'Product')+'</strong>'+
+          '<div class="price">S
+}
+
+module.exports=(req,res)=>{
+  if(!isAdmin(req)){res.writeHead(302,{Location:'/'});return res.end()}
+  const html=fs.readFileSync(path.join(process.cwd(),'public','dashboard.html'),'utf8');
+  res.setHeader('Content-Type','text/html; charset=utf-8');
+  res.setHeader('Cache-Control','private, no-store');
+  res.status(200).send(injectPOSInventoryLink(html));
+};
++Number(p.price||0).toFixed(2)+'</div>'+
+          '<div class="stock">'+(stock>0?stock+' in stock':'Sold out')+'</div></button>';
+      }).join('')||'<div class="tdg-pos-category-empty">No products in this category.</div>';
+      if(typeof tdgRenderPOSCart==='function')tdgRenderPOSCart();
+    };
+    install();
+    window.tdgRenderPOS();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>\`;
+
+  const observabilityPatch=String.raw\`
+<style id="tdg-ga-observability">
+.tdg-ga-observability{width:100%;box-sizing:border-box}
+.tdg-ga-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.tdg-ga-title{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.tdg-ga-sub{font-size:10px;color:var(--muted);margin-top:4px}
+.tdg-ga-live{font-size:10px;color:#8ee6a8;white-space:nowrap}
+.tdg-ga-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.tdg-ga-kpi{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.025)}
+.tdg-ga-kpi b{display:block;font-size:18px;line-height:1.1;margin-bottom:3px}
+.tdg-ga-kpi span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.tdg-ga-tables{display:grid;grid-template-columns:1fr 1.5fr;gap:12px}
+.tdg-ga-table-wrap{border:1px solid var(--line);border-radius:10px;overflow:auto}
+.tdg-ga-table-title{padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+.tdg-ga-table{width:100%;border-collapse:collapse;font-size:10px}
+.tdg-ga-table th,.tdg-ga-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;white-space:nowrap}
+.tdg-ga-table th{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tdg-ga-table td.num{text-align:right}
+.tdg-ga-error{padding:16px;color:#ff9b9b;font-size:11px}
+@media(max-width:900px){.tdg-ga-summary{grid-template-columns:repeat(2,1fr)}.tdg-ga-tables{grid-template-columns:1fr}}
+</style>
+<script>
+(function(){
+  function esc(v){return htmlEscape(String(v==null?'':v))}
+  function findObservability(){
+    const all=[...document.querySelectorAll('body *')];
+    return all.find(function(el){
+      if(el.children.length<1)return false;
+      const t=(el.innerText||'').replace(/\s+/g,' ').trim();
+      return t.length<1800 && /OBSERVABILITY/i.test(t) && (/Web Analytics/i.test(t)||/Speed Insights/i.test(t));
+    });
+  }
+  function render(d){
+    const host=findObservability();if(!host)return;
+    const cities=(d.activeUsersByCity||[]).slice(0,10);
+    const pages=(d.pagesAndScreens||[]).slice(0,15);
+    host.innerHTML='<div class="tdg-ga-observability">'+
+      '<div class="tdg-ga-head"><div><div class="tdg-ga-title">OBSERVABILITY</div><div class="tdg-ga-sub">Google Analytics 4 · Last 7 days</div></div><div class="tdg-ga-live">'+Number(d.realtimeUsers||0)+' active now</div></div>'+
+      '<div class="tdg-ga-summary">'+
+      '<div class="tdg-ga-kpi"><b>'+Number(d.activeUsers||0).toLocaleString()+'</b><span>Active users</span></div>'+
+      '<div class="tdg-ga-kpi"><b>'+Number(d.sessions||0).toLocaleString()+'</b><span>Sessions</span></div>'+
+      '<div class="tdg-ga-kpi"><b>'+Number(d.pageViews||0).toLocaleString()+'</b><span>Page views</span></div>'+
+      '<div class="tdg-ga-kpi"><b>'+Number(d.realtimeUsers||0).toLocaleString()+'</b><span>Active now</span></div>'+
+      '</div><div class="tdg-ga-tables">'+
+      '<div class="tdg-ga-table-wrap"><div class="tdg-ga-table-title">Active users by City</div><table class="tdg-ga-table"><thead><tr><th>City</th><th>Active users</th></tr></thead><tbody>'+
+      (cities.map(function(r){return '<tr><td>'+esc(r.city)+'</td><td class="num">'+Number(r.activeUsers||0).toLocaleString()+'</td></tr>'}).join('')||'<tr><td colspan="2">No data</td></tr>')+
+      '</tbody></table></div>'+
+      '<div class="tdg-ga-table-wrap"><div class="tdg-ga-table-title">Pages and screens: Page path and screen class</div><table class="tdg-ga-table"><thead><tr><th>Page path</th><th>Screen class</th><th>Active users</th><th>Views</th></tr></thead><tbody>'+
+      (pages.map(function(r){return '<tr><td>'+esc(r.pagePath)+'</td><td>'+esc(r.screenClass)+'</td><td class="num">'+Number(r.activeUsers||0).toLocaleString()+'</td><td class="num">'+Number(r.pageViews||0).toLocaleString()+'</td></tr>'}).join('')||'<tr><td colspan="4">No data</td></tr>')+
+      '</tbody></table></div></div></div>';
+  }
+  async function load(){
+    const host=findObservability();if(!host)return;
+    try{
+      const response=await fetch('/api/analytics',{credentials:'same-origin',cache:'no-store'});
+      const d=await response.json();
+      if(!response.ok||d.error)throw new Error(d.error||('API '+response.status));
+      render(d);
+    }catch(e){
+      host.innerHTML='<div class="tdg-ga-observability"><div class="tdg-ga-title">OBSERVABILITY</div><div class="tdg-ga-error">Google Analytics could not be loaded: '+htmlEscape(e.message)+'</div></div>';
+    }
+  }
+  function boot(){load();setInterval(load,60000)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>\`;
+  return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
