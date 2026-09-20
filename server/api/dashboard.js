@@ -276,7 +276,78 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(exactAura).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+'</body>');
+
+  const auraKpiMirrorPatch=String.raw\`
+<style id="tdg-aura-kpi-mirror">
+/* Mirror the real neighbouring KPI card geometry instead of using guessed offsets. */
+.tdg-aura-kpi-mirror{position:relative!important;box-sizing:border-box!important;overflow:hidden!important}
+.tdg-aura-kpi-mirror .tdg-aura-logo-compact,
+.tdg-aura-kpi-mirror .tdg-aura-kpi-value,
+.tdg-aura-kpi-mirror .tdg-aura-kpi-customers{
+  position:absolute!important;
+  margin:0!important;
+}
+.tdg-aura-kpi-mirror .tdg-aura-logo-compact{
+  object-fit:contain!important;
+  filter:brightness(0) invert(1)!important;
+  z-index:2!important;
+}
+</style>
+<script>
+(function(){
+  function leafText(root,pattern){
+    return [...root.querySelectorAll('*')].find(function(el){
+      return !el.children.length && pattern.test((el.textContent||'').replace(/\\s+/g,' ').trim());
+    });
+  }
+  function mirrorAura(){
+    const all=[...document.querySelectorAll('[class*="card" i],[class*="box" i],[class*="panel" i],[class*="tile" i]')];
+    const aura=all.find(function(el){
+      const t=(el.innerText||'').replace(/\\s+/g,' ').trim();
+      return /Aura Membership/i.test(t) && /\\b\\d+\\s+customers?\\b/i.test(t);
+    });
+    if(!aura)return;
+    const reference=all.find(function(el){
+      const t=(el.innerText||'').replace(/\\s+/g,' ').trim();
+      return /Paid Orders/i.test(t) && !/Aura Membership/i.test(t);
+    }) || all.find(function(el){
+      const t=(el.innerText||'').replace(/\\s+/g,' ').trim();
+      return /Last 7 days/i.test(t) && !/Aura Membership/i.test(t);
+    });
+    if(!reference)return;
+    const logo=aura.querySelector('.tdg-aura-logo-compact');
+    const value=leafText(aura,/^\\d+(?:\\.\\d+)?$/);
+    const customers=leafText(aura,/^\\d+\\s+customers?$/i);
+    const refTitle=leafText(reference,/^(Paid Orders|Paid orders)$/i);
+    const refValue=leafText(reference,/^\\d+(?:\\.\\d+)?$/);
+    const refSub=leafText(reference,/^Last 7 days$/i);
+    if(!logo||!value||!customers||!refValue||!refSub)return;
+
+    aura.classList.add('tdg-aura-kpi-mirror');
+
+    const ar=aura.getBoundingClientRect();
+    function place(el,refEl,extra){
+      const rr=refEl.getBoundingClientRect();
+      el.style.left=Math.round(rr.left-ar.left)+'px';
+      el.style.top=Math.round(rr.top-ar.top)+'px';
+      if(extra)Object.keys(extra).forEach(k=>el.style[k]=extra[k]);
+    }
+
+    /* Logo occupies the same title position as Paid Orders. */
+    if(refTitle) place(logo,refTitle,{width:'74px',height:'74px',maxWidth:'74px',maxHeight:'74px'});
+    else place(logo,refValue,{width:'74px',height:'74px',maxWidth:'74px',maxHeight:'74px'});
+
+    /* Aura unit count and customer line occupy the exact same vertical rhythm. */
+    place(value,refValue,{lineHeight:getComputedStyle(refValue).lineHeight,fontSize:getComputedStyle(refValue).fontSize,fontWeight:getComputedStyle(refValue).fontWeight});
+    place(customers,refSub,{lineHeight:getComputedStyle(refSub).lineHeight,fontSize:getComputedStyle(refSub).fontSize,fontWeight:getComputedStyle(refSub).fontWeight});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mirrorAura,{once:true});
+  else mirrorAura();
+  new MutationObserver(function(){requestAnimationFrame(mirrorAura)}).observe(document.documentElement,{subtree:true,childList:true});
+  window.addEventListener('resize',mirrorAura);
+})();
+</script>\`;
+  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
