@@ -13,27 +13,42 @@ module.exports=async function(req,res){
   try{
     if(req.method==='GET'&&route==='payment-summary'){
       if(!requireAdmin(req,res))return;
-      await ensureSchema();
-      const db=getPool();
-      const r=await db.query(`
-        SELECT
-          COALESCE(SUM(total) FILTER (WHERE payment_method='NETS'),0) AS nets_amount,
-          COUNT(*) FILTER (WHERE payment_method='NETS') AS nets_count,
-          COALESCE(SUM(total) FILTER (WHERE payment_method='PAYNOW'),0) AS paynow_amount,
-          COUNT(*) FILTER (WHERE payment_method='PAYNOW') AS paynow_count,
-          COALESCE(SUM(total) FILTER (WHERE payment_method='STRIPE'),0) AS stripe_amount,
-          COUNT(*) FILTER (WHERE payment_method='STRIPE') AS stripe_count,
-          COALESCE(SUM(total),0) AS total,
-          COUNT(*) AS total_count
-        FROM orders
-        WHERE payment_status='PAID'
-          AND created_at >= CURRENT_DATE
-      `);
-      const x=r.rows[0]||{};
-      return json(res,200,{ok:true,total:Number(x.total||0),count:Number(x.total_count||0),
-        nets:{amount:Number(x.nets_amount||0),count:Number(x.nets_count||0)},
-        paynow:{amount:Number(x.paynow_amount||0),count:Number(x.paynow_count||0)},
-        stripe:{amount:Number(x.stripe_amount||0),count:Number(x.stripe_count||0)}});
+      const stripe=client();
+      const dayStart=new Date();
+      dayStart.setHours(0,0,0,0);
+      const dayEnd=new Date(dayStart.getTime()+86400000);
+      const stripeData=await stripe.paymentIntents.list({
+        limit:100,
+        created:{gte:Math.floor(dayStart.getTime()/1000),lt:Math.floor(dayEnd.getTime()/1000)}
+      });
+      const stripePaid=(stripeData.data||[]).filter(p=>p.status==='succeeded');
+      const stripeAmount=stripePaid.reduce((sum,p)=>sum+Number(p.amount_received||p.amount||0)/100,0);
+      let nets={amount:0,count:0},paynow={amount:0,count:0},dbConfigured=Boolean(process.env.DATABASE_URL||process.env.POSTGRES_URL),dbError=null;
+      if(dbConfigured){
+        try{
+          await ensureSchema();
+          const db=getPool();
+          const r=await db.query(`
+            SELECT
+              COALESCE(SUM(total) FILTER (WHERE payment_method='NETS'),0) AS nets_amount,
+              COUNT(*) FILTER (WHERE payment_method='NETS') AS nets_count,
+              COALESCE(SUM(total) FILTER (WHERE payment_method='PAYNOW'),0) AS paynow_amount,
+              COUNT(*) FILTER (WHERE payment_method='PAYNOW') AS paynow_count
+            FROM orders
+            WHERE payment_status='PAID'
+              AND created_at >= (date_trunc('day', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore')
+              AND created_at <  (date_trunc('day', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore') + interval '1 day'
+          `);
+          const x=r.rows[0]||{};
+          nets={amount:Number(x.nets_amount||0),count:Number(x.nets_count||0)};
+          paynow={amount:Number(x.paynow_amount||0),count:Number(x.paynow_count||0)};
+        }catch(e){dbError=e.message||'Database unavailable';}
+      }else{
+        dbError='Database is not configured. Add DATABASE_URL (or POSTGRES_URL) in Vercel Production.';
+      }
+      return json(res,200,{ok:true,databaseConfigured:dbConfigured,databaseError:dbError,
+        total:Number(nets.amount)+Number(paynow.amount)+Number(stripeAmount),count:nets.count+paynow.count+stripePaid.length,
+        nets,paynow,stripe:{amount:Number(stripeAmount),count:stripePaid.length,source:'Stripe PaymentIntents'}});
     }
 
     const stripe=client();
