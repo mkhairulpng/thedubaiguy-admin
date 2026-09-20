@@ -213,7 +213,34 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){arrangeAura()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+'</body>');
+  const topLeftLogoPatch=String.raw`
+<style id="tdg-remove-top-left-branding">
+/* Remove only the extra branding logos in the dashboard's top-left/header area.
+   Keep the Aura logo inside the Aura KPI card. */
+.tdg-remove-top-left-logo{display:none!important}
+</style>
+<script>
+(function(){
+  function removeTopLeftLogos(){
+    const els=[...document.querySelectorAll('img,svg,[role="img"]')];
+    els.forEach(function(el){
+      if(el.closest('.tdg-aura-card-aligned,.tdg-aura-content-order,.tdg-aura-logo-compact'))return;
+      const r=el.getBoundingClientRect();
+      if(r.width<8||r.height<8)return;
+      const inTopLeft=r.top>=0 && r.top<180 && r.left<360;
+      if(!inTopLeft)return;
+      const meta=((el.getAttribute('alt')||'')+' '+(el.getAttribute('src')||'')+' '+(el.getAttribute('class')||'')+' '+(el.getAttribute('id')||'')).toLowerCase();
+      if(/the.?dubai.?guy|tdg|logo|brand/.test(meta)){
+        el.classList.add('tdg-remove-top-left-logo');
+      }
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',removeTopLeftLogos,{once:true});
+  else removeTopLeftLogos();
+  new MutationObserver(removeTopLeftLogos).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>`;
+  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
