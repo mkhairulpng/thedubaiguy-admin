@@ -479,7 +479,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
 </script>`;
 
 
-  const posCatalogPatch=String.raw\`
+  const posCatalogPatch=String.raw`
 <style id="tdg-pos-category-catalog">
 .tdg-pos-category-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 .tdg-pos-category-tabs button{border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);border-radius:999px;padding:8px 13px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
@@ -557,9 +557,9 @@ module.exports=(req,res)=>{
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
-</script>\`;
+</script>`;
 
-  const observabilityPatch=String.raw\`
+  const observabilityPatch=String.raw`
 <style id="tdg-ga-observability">
 .tdg-ga-observability{width:100%;box-sizing:border-box}
 .tdg-ga-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
@@ -624,7 +624,7 @@ module.exports=(req,res)=>{
   function boot(){load();setInterval(load,60000)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
-</script>\`;
+</script>`;
   return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+'</body>');
 }
 
