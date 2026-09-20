@@ -89,7 +89,56 @@ function injectPOSInventoryLink(html){
 })();
 </script>`;
 
-  return html.replace('</body>',patch+'</body>');
+  const auraPatch=String.raw\`
+<style id="tdg-aura-logo-polish">
+/* TheDubaiGuy dashboard branding */
+img[alt*="TheDubaiGuy" i],
+img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
+
+/* Aura marks inside cards/trays stay compact and unobtrusive */
+.tdg-aura-logo-compact{width:42px!important;height:42px!important;max-width:42px!important;max-height:42px!important;object-fit:contain!important}
+.tdg-aura-logo-compact *{max-width:42px!important;max-height:42px!important}
+.tdg-aura-side-logo-compact{width:30px!important;height:30px!important;max-width:30px!important;max-height:30px!important;object-fit:contain!important}
+
+/* Remove the separate Aura logo sitting above the side tray; keep the tray itself */
+.tdg-aura-side-logo-top-remove{display:none!important}
+</style>
+<script>
+(function(){
+  function polishAura(){
+    const nodes=[...document.querySelectorAll('img,svg,[class],[id]')];
+    nodes.forEach(function(el){
+      const meta=[
+        el.getAttribute&&el.getAttribute('alt')||'',
+        el.getAttribute&&el.getAttribute('src')||'',
+        el.getAttribute&&el.getAttribute('class')||'',
+        el.getAttribute&&el.getAttribute('id')||''
+      ].join(' ').toLowerCase();
+      if(!/aura/.test(meta))return;
+      const isLogo=/logo|brand|mark|emblem/.test(meta);
+      if(!isLogo)return;
+      const tray=el.closest('aside,nav,[class*="tray" i],[class*="drawer" i],[class*="sidebar" i]');
+      const card=el.closest('[class*="card" i],[class*="box" i],[class*="panel" i],[class*="tile" i]');
+      if(tray){
+        el.classList.add('tdg-aura-side-logo-compact');
+        const parent=el.parentElement;
+        if(parent){
+          const pmeta=(parent.className||'').toString().toLowerCase()+' '+(parent.id||'').toLowerCase();
+          if(/top|header|title|brand/.test(pmeta) && !/membership/.test(pmeta)){
+            el.classList.add('tdg-aura-side-logo-top-remove');
+          }
+        }
+      }else if(card){
+        el.classList.add('tdg-aura-logo-compact');
+      }
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polishAura,{once:true});
+  else polishAura();
+  new MutationObserver(function(){polishAura()}).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>`;
+  return html.replace('</body>',patch+auraPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
