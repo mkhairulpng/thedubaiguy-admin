@@ -477,56 +477,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){replaceAuraWordmarks()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  const liveDashboardPatch=String.raw`
-<style id="tdg-live-dashboard-data">
-.tdg-live-error{color:#ff9b9b!important}
-.tdg-live-fresh{font-size:10px!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:rgba(255,255,255,.48)!important;margin-top:6px!important}
-</style>
-<script>
-(function(){
-  function text(el){return (el&&el.innerText||el&&el.textContent||'').replace(/\s+/g,' ').trim()}
-  function findCard(label){
-    const needle=String(label).toLowerCase();
-    const leaf=[...document.querySelectorAll('body *')].find(function(el){return !el.children.length&&text(el).toLowerCase()===needle});
-    if(!leaf)return null;
-    let p=leaf;
-    for(let i=0;i<8&&p;i++,p=p.parentElement){const r=p.getBoundingClientRect();if(r.width>=220&&r.height>=90&&r.height<=500&&text(p).length<900)return p}
-    return leaf.parentElement;
-  }
-  function leaf(card,re){return card?[...card.querySelectorAll('*')].find(function(el){return !el.children.length&&re.test(text(el))}):null}
-  function money(n){return 'S
-}
-
-module.exports=(req,res)=>{
-  if(!isAdmin(req)){res.writeHead(302,{Location:'/'});return res.end()}
-  const html=fs.readFileSync(path.join(process.cwd(),'public','dashboard.html'),'utf8');
-  res.setHeader('Content-Type','text/html; charset=utf-8');
-  res.setHeader('Cache-Control','private, no-store');
-  res.status(200).send(injectPOSInventoryLink(html));
-};
-+Number(n||0).toFixed(2)}
-  function tx(n){return Number(n||0)+' transactions'}
-  function set(card,re,value,cls){const el=leaf(card,re);if(!el)return;el.textContent=value;if(cls)el.classList.add(cls)}
-  async function refresh(){
-    try{
-      const response=await fetch('/api/live',{credentials:'same-origin',cache:'no-store'});
-      const d=await response.json();
-      const total=findCard("Today's settlements");
-      if(total){set(total,/^S\$[\d,.-]+$/i,money(d.today?.total?.amount));set(total,/^\d+ transactions$/i,tx(d.today?.total?.count))}
-      for(const item of [['NETS','nets'],['PAYNOW','paynow'],['STRIPE','stripe']]){
-        const card=findCard(item[0]);
-        const v=d.today?.[item[1]]||{};
-        if(card){set(card,/^S\$[\d,.-]+$/i,money(v.amount));set(card,/^\d+ transactions$/i,tx(v.count))}
-      }
-      window.tdgLiveState=d;
-    }catch(e){window.tdgLiveState={ok:false,error:String(e&&e.message||e)}}
-  }
-  function boot(){refresh();window.setInterval(refresh,30000)}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-})();
-</script>`;
-
-  return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+liveDashboardPatch+'</body>');
+  return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
