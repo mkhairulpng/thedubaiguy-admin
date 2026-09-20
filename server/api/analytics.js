@@ -25,10 +25,8 @@ function propertyName(){
   return `properties/${id}`;
 }
 
-function metric(report,index){
-  const values=report && report.rows && report.rows[0] && report.rows[0].metricValues || [];
-  return Number(values[index] && values[index].value || 0);
-}
+function metricRow(row,index){ const values=row&&row.metricValues||[]; return Number(values[index]&&values[index].value||0); }
+function dim(row,index){ const values=row&&row.dimensionValues||[]; return String(values[index]&&values[index].value||''); }
 
 module.exports=async function handler(req,res){
   if(!requireAdmin(req,res)) return;
@@ -39,38 +37,31 @@ module.exports=async function handler(req,res){
   try{
     const property=propertyName();
     const client=new BetaAnalyticsDataClient({credentials:credentials()});
-    const [report]=await client.runReport({
-      property,
-      dateRanges:[{startDate:'7daysAgo',endDate:'today'}],
-      metrics:[
-        {name:'activeUsers'},
-        {name:'newUsers'},
-        {name:'sessions'},
-        {name:'screenPageViews'},
-        {name:'eventCount'},
-        {name:'engagementRate'},
-        {name:'ecommercePurchases'},
-        {name:'totalRevenue'}
-      ]
-    });
+    const [report,cityReport,pageReport]=await Promise.all([
+      client.runReport({property,dateRanges:[{startDate:'7daysAgo',endDate:'today'}],metrics:[{name:'activeUsers'},{name:'newUsers'},{name:'sessions'},{name:'screenPageViews'},{name:'eventCount'},{name:'engagementRate'},{name:'ecommercePurchases'},{name:'totalRevenue'}]}),
+      client.runReport({property,dateRanges:[{startDate:'7daysAgo',endDate:'today'}],dimensions:[{name:'city'}],metrics:[{name:'activeUsers'}],orderBys:[{metric:{metricName:'activeUsers'},desc:true}],limit:25}),
+      client.runReport({property,dateRanges:[{startDate:'7daysAgo',endDate:'today'}],dimensions:[{name:'pagePathPlusQueryString'},{name:'unifiedScreenClass'}],metrics:[{name:'activeUsers'},{name:'screenPageViews'}],orderBys:[{metric:{metricName:'screenPageViews'},desc:true}],limit:25})
+    ]);
     let realtimeUsers=0;
     if(typeof client.runRealtimeReport==='function'){
       const [realtime]=await client.runRealtimeReport({property,metrics:[{name:'activeUsers'}]});
-      realtimeUsers=metric(realtime,0);
+      realtimeUsers=metricRow((realtime.rows||[])[0],0);
     }
     const body={
       propertyId:cleanEnv('GA_PROPERTY_ID'),
       measurementId:cleanEnv('GA_MEASUREMENT_ID')||null,
       period:'7days',
-      activeUsers:metric(report,0),
-      newUsers:metric(report,1),
-      sessions:metric(report,2),
-      pageViews:metric(report,3),
-      eventCount:metric(report,4),
-      engagementRate:metric(report,5),
-      ecommercePurchases:metric(report,6),
-      totalRevenue:metric(report,7),
+      activeUsers:metricRow((report.rows||[])[0],0),
+      newUsers:metricRow((report.rows||[])[0],1),
+      sessions:metricRow((report.rows||[])[0],2),
+      pageViews:metricRow((report.rows||[])[0],3),
+      eventCount:metricRow((report.rows||[])[0],4),
+      engagementRate:metricRow((report.rows||[])[0],5),
+      ecommercePurchases:metricRow((report.rows||[])[0],6),
+      totalRevenue:metricRow((report.rows||[])[0],7),
       realtimeUsers,
+      activeUsersByCity:(cityReport.rows||[]).map(r=>({city:dim(r,0)||'Unknown',activeUsers:metricRow(r,0)})),
+      pagesAndScreens:(pageReport.rows||[]).map(r=>({pagePath:dim(r,0)||'/',screenClass:dim(r,1)||'Unknown',activeUsers:metricRow(r,0),pageViews:metricRow(r,1)})),
       source:'Google Analytics Data API'
     };
     res.statusCode=200;
