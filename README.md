@@ -82,3 +82,6 @@ Enable **Web Analytics** and **Speed Insights** for the Vercel project, then dep
 ## Why the API folder contains only one file
 
 Vercel Hobby limits deployments to 12 Serverless Functions. The previous package exposed many redundant wrapper files under `api/`, which caused the deployment to fail after a successful build. v255 keeps only `api/[...route].js`; it dispatches the existing implementations under `server/api/` for health, authentication, dashboard, products, orders, customers, Aura, POS, analytics, Stripe and Lalamove.
+
+
+<!-- syntax preflight marker -->
