@@ -411,7 +411,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){arrangeNETS()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  const kpiCompactPatch=String.raw\`
+  const kpiCompactPatch=String.raw`
 <style id="tdg-kpi-compact-exact">
 .tdg-kpi-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;width:100%!important}
 .tdg-kpi-compact-card{position:relative!important;box-sizing:border-box!important;min-width:0!important;height:150px!important;padding:18px 20px!important;border-radius:16px!important;overflow:hidden!important;display:block!important;background:rgba(28,29,30,.92)!important;border:1px solid rgba(255,255,255,.13)!important;box-shadow:0 8px 24px rgba(0,0,0,.12)!important}
@@ -435,7 +435,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',compact,{once:true});else compact();
  new MutationObserver(function(){requestAnimationFrame(compact)}).observe(document.documentElement,{subtree:true,childList:true});window.addEventListener('resize',compact);
 })();
-</script>\`;
+</script>`;
   return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+'</body>');
 }
 
