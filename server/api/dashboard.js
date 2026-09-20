@@ -95,7 +95,9 @@ function injectPOSInventoryLink(html){
 img[alt*="TheDubaiGuy" i],
 img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
 
-/* Aura marks inside cards/trays stay compact and unobtrusive */
+/* Aura card uses the same internal alignment as the neighbouring KPI cards */
+.tdg-aura-card-aligned{position:relative!important;box-sizing:border-box!important}
+.tdg-aura-card-aligned .tdg-aura-logo-compact{position:absolute!important;top:20px!important;left:30px!important;width:74px!important;height:74px!important;max-width:74px!important;max-height:74px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;z-index:2!important}
 .tdg-aura-logo-compact{width:74px!important;height:74px!important;max-width:74px!important;max-height:74px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
 .tdg-aura-logo-compact *{max-width:74px!important;max-height:74px!important}
 .tdg-aura-side-logo-compact{width:53px!important;height:53px!important;max-width:53px!important;max-height:53px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
@@ -130,6 +132,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
         }
       }else if(card){
         el.classList.add('tdg-aura-logo-compact');
+        card.classList.add('tdg-aura-card-aligned');
       }
     });
   }
