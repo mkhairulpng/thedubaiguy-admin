@@ -277,7 +277,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
 })();
 </script>`;
 
-  const auraKpiMirrorPatch=String.raw\`
+  const auraKpiMirrorPatch=String.raw`
 <style id="tdg-aura-kpi-mirror">
 /* Mirror the real neighbouring KPI card geometry instead of using guessed offsets. */
 .tdg-aura-kpi-mirror{position:relative!important;box-sizing:border-box!important;overflow:hidden!important}
@@ -346,7 +346,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){requestAnimationFrame(mirrorAura)}).observe(document.documentElement,{subtree:true,childList:true});
   window.addEventListener('resize',mirrorAura);
 })();
-</script>\`;
+</script>`;
   return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+'</body>');
 }
 
