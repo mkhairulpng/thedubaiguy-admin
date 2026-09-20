@@ -411,7 +411,32 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){arrangeNETS()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-    const auraWordmarkPatch=String.raw`
+    const kpiCompactPatch=String.raw`
+<style id="tdg-kpi-compact-exact">
+.tdg-kpi-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;width:100%!important}
+.tdg-kpi-compact-card{position:relative!important;box-sizing:border-box!important;min-width:0!important;height:150px!important;padding:18px 20px!important;border-radius:16px!important;overflow:hidden!important;display:block!important;background:rgba(28,29,30,.92)!important;border:1px solid rgba(255,255,255,.13)!important;box-shadow:0 8px 24px rgba(0,0,0,.12)!important}
+.tdg-kpi-compact-card .tdg-kpi-title{position:absolute!important;left:20px!important;top:17px!important;font-size:14px!important;line-height:1.2!important;font-weight:500!important;color:rgba(255,255,255,.72)!important;margin:0!important}
+.tdg-kpi-compact-card .tdg-kpi-value{position:absolute!important;left:20px!important;top:48px!important;font-size:34px!important;line-height:1.05!important;font-weight:500!important;letter-spacing:-.025em!important;color:#fff!important;margin:0!important}
+.tdg-kpi-compact-card .tdg-kpi-sub{position:absolute!important;left:20px!important;bottom:18px!important;font-size:13px!important;line-height:1.2!important;color:rgba(255,255,255,.58)!important;margin:0!important}
+.tdg-kpi-compact-card .tdg-kpi-badge{position:absolute!important;right:16px!important;top:16px!important;border-radius:11px!important;padding:6px 10px!important;font-size:12px!important;line-height:1!important;font-weight:600!important;background:rgba(255,255,255,.10)!important;color:rgba(255,255,255,.78)!important}
+.tdg-kpi-compact-card .tdg-kpi-badge.up{background:rgba(71,214,147,.14)!important;color:#75e6ae!important}.tdg-kpi-compact-card .tdg-kpi-badge.down{background:rgba(255,92,92,.13)!important;color:#ff8c8c!important}
+.tdg-kpi-compact-card .tdg-kpi-spark{position:absolute!important;right:18px!important;bottom:17px!important;width:128px!important;height:36px!important;opacity:.95!important}
+.tdg-kpi-compact-card .tdg-kpi-spark svg{width:100%!important;height:100%!important;overflow:visible!important}.tdg-kpi-compact-card .tdg-kpi-spark path,.tdg-kpi-compact-card .tdg-kpi-spark polyline{fill:none!important;stroke:rgba(255,255,255,.88)!important;stroke-width:2!important;vector-effect:non-scaling-stroke!important}
+@media(max-width:1050px){.tdg-kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:650px){.tdg-kpi-row{grid-template-columns:1fr!important;gap:12px!important}.tdg-kpi-compact-card{height:138px!important}}
+</style>
+<script>
+(function(){
+ function text(el){return(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim()}
+ function leaf(root,re){return[...root.querySelectorAll('*')].find(function(x){return!x.children.length&&re.test(text(x))})}
+ function cardFor(label){const node=[...document.querySelectorAll('body *')].find(function(x){return!x.children.length&&text(x).toLowerCase()===label.toLowerCase()});if(!node)return null;let p=node;for(let i=0;i<7&&p;i++,p=p.parentElement){const r=p.getBoundingClientRect(),t=text(p);if(r.width>=260&&r.height>=110&&r.height<=420&&t.length<450)return p}return node.parentElement}
+ function badge(card){return[...card.querySelectorAll('*')].find(function(x){if(x.children.length)return false;const t=text(x);return/^(?:[▲▼↑↓]\s*)?\d+(?:\.\d+)?%?$/.test(t)||/\btotal\b/i.test(t)||/^[▲▼↑↓]\s*\d+/.test(t)})}
+ function spark(card){const s=card.querySelector('svg');if(!s)return null;const wrap=document.createElement('div');wrap.className='tdg-kpi-spark';wrap.appendChild(s.cloneNode(true));return wrap}
+ function compact(){const labels=['Stripe revenue','Paid orders','AURA','Inventory value'],cards=labels.map(cardFor);if(cards.some(x=>!x))return;const unique=[...new Set(cards)];if(unique.length!==4)return;let row=unique[0].parentElement;while(row&&row!==document.body){const kids=[...row.children];if(kids.filter(k=>unique.includes(k)).length>=3)break;row=row.parentElement}if(!row)row=unique[0].parentElement;row.classList.add('tdg-kpi-row');unique.forEach(function(card){card.classList.add('tdg-kpi-compact-card');const labelNode=[...card.querySelectorAll('*')].find(x=>!x.children.length&&['stripe revenue','paid orders','aura','inventory value'].includes(text(x).toLowerCase())),valueNode=leaf(card,/^\$[\d,.]+$|^[\d,.]+$/),subNode=leaf(card,/^(?:Live paid orders|Last 7 days|\d+ customers?|\d+ units)$/i),b=badge(card);if(labelNode)labelNode.classList.add('tdg-kpi-title');if(valueNode&&valueNode!==labelNode)valueNode.classList.add('tdg-kpi-value');if(subNode&&subNode!==valueNode)subNode.classList.add('tdg-kpi-sub');if(b&&b!==valueNode&&b!==subNode)b.classList.add('tdg-kpi-badge');const bt=b?text(b):'';if(b&&/^[▲↑]/.test(bt))b.classList.add('up');if(b&&/^[▼↓]/.test(bt))b.classList.add('down');if(!card.querySelector('.tdg-kpi-spark')){const sw=spark(card);if(sw)card.appendChild(sw)}})}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',compact,{once:true});else compact();
+ new MutationObserver(function(){requestAnimationFrame(compact)}).observe(document.documentElement,{subtree:true,childList:true});window.addEventListener('resize',compact);
+})();
+</script>`;
+  const auraWordmarkPatch=String.raw`
 <style id="tdg-aura-wordmark-white">
 .tdg-aura-wordmark{display:block!important;width:130px!important;height:auto!important;max-width:130px!important;max-height:none!important;object-fit:contain!important;filter:none!important}
 .tdg-aura-side-wordmark{display:block!important;width:100px!important;height:auto!important;max-width:100px!important;max-height:none!important;object-fit:contain!important;filter:none!important}
