@@ -172,7 +172,48 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(function(){compactDashboard()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>',patch+auraPatch+compactPatch+'</body>');
+  const auraContentPatch=String.raw`
+<style id="tdg-aura-content-order">
+.tdg-aura-content-order{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:8px!important}
+.tdg-aura-content-order .tdg-aura-logo-compact{position:static!important;display:block!important;margin:0 0 4px 0!important}
+.tdg-aura-unit-line{font-size:38px!important;line-height:1.05!important;font-weight:500!important;margin:0!important}
+.tdg-aura-customer-line{font-size:20px!important;line-height:1.2!important;margin:0!important}
+</style>
+<script>
+(function(){
+  function arrangeAura(){
+    const nodes=[...document.querySelectorAll('body *')];
+    const auraCards=nodes.filter(el=>{
+      const t=(el.innerText||'').replace(/\\s+/g,' ').trim();
+      return t && /Aura Membership/i.test(t) && /\\b\\d+\\s+customers?\\b/i.test(t) && t.length<500;
+    });
+    auraCards.forEach(card=>{
+      const logo=card.querySelector('.tdg-aura-logo-compact');
+      if(!logo)return;
+      card.classList.add('tdg-aura-content-order');
+      const customer=[...card.querySelectorAll('*')].find(el=>/^\\d+\\s+customers?$/i.test((el.textContent||'').trim()));
+      if(customer){
+        customer.classList.add('tdg-aura-customer-line');
+        let unit=[...card.querySelectorAll('*')].find(el=>{
+          const t=(el.textContent||'').trim();
+          return /^\\d+(?:\\.\\d+)?$/.test(t) && el!==customer && !el.querySelector('*');
+        });
+        if(unit){
+          unit.textContent=unit.textContent.trim()+' units';
+          unit.classList.add('tdg-aura-unit-line');
+        }
+        if(customer.parentElement && customer.parentElement!==card){
+          customer.parentElement.classList.add('tdg-aura-customer-line');
+        }
+      }
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',arrangeAura,{once:true});
+  else arrangeAura();
+  new MutationObserver(function(){arrangeAura()}).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>`;
+  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
