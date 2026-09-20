@@ -242,7 +242,41 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   new MutationObserver(removeTopLeftLogos).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+'</body>');
+  const auraKpiExactPatch=String.raw`
+<style id="tdg-aura-kpi-exact">
+/* Make Aura use the exact KPI rhythm of the neighbouring Paid orders / Inventory cards */
+.tdg-aura-kpi-exact{position:relative!important;box-sizing:border-box!important;overflow:hidden!important}
+.tdg-aura-kpi-exact .tdg-aura-logo-compact{position:absolute!important;top:20px!important;left:30px!important;width:74px!important;height:74px!important;max-width:74px!important;max-height:74px!important;margin:0!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
+.tdg-aura-kpi-value{position:absolute!important;top:120px!important;left:30px!important;margin:0!important;line-height:1.05!important}
+.tdg-aura-kpi-customers{position:absolute!important;top:210px!important;left:30px!important;margin:0!important;line-height:1.2!important}
+@media(max-width:900px){
+ .tdg-aura-kpi-exact .tdg-aura-logo-compact{left:20px!important}
+ .tdg-aura-kpi-value{left:20px!important}
+ .tdg-aura-kpi-customers{left:20px!important}
+}
+</style>
+<script>
+(function(){
+  function exactAura(){
+    const cards=[...document.querySelectorAll('[class*="card" i],[class*="box" i],[class*="panel" i],[class*="tile" i]')];
+    cards.forEach(function(card){
+      const text=(card.innerText||'').replace(/\\s+/g,' ').trim();
+      if(!/Aura Membership/i.test(text))return;
+      const logo=card.querySelector('.tdg-aura-logo-compact');
+      const customer=[...card.querySelectorAll('*')].find(el=>/^\\d+\\s+customers?$/i.test((el.textContent||'').trim()) && !el.children.length);
+      if(!logo||!customer)return;
+      card.classList.add('tdg-aura-kpi-exact');
+      const value=[...card.querySelectorAll('*')].find(el=>/^\\d+(?:\\.\\d+)?$/.test((el.textContent||'').trim()) && !el.children.length && el!==customer);
+      if(value)value.classList.add('tdg-aura-kpi-value');
+      customer.classList.add('tdg-aura-kpi-customers');
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',exactAura,{once:true});
+  else exactAura();
+  new MutationObserver(exactAura).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>`;
+  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
