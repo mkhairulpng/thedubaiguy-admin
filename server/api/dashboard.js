@@ -347,7 +347,71 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
   window.addEventListener('resize',mirrorAura);
 })();
 </script>`;
-  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+'</body>');
+
+  const netsSettlementPatch=String.raw\`
+<style id="tdg-nets-settlement-layout">
+/* NETS settlement card: logo left, transactions underneath, amount on right. */
+.tdg-nets-settlement{position:relative!important;box-sizing:border-box!important;overflow:hidden!important}
+.tdg-nets-settlement .tdg-nets-logo,
+.tdg-nets-settlement .tdg-nets-transactions,
+.tdg-nets-settlement .tdg-nets-amount{position:absolute!important;margin:0!important}
+.tdg-nets-settlement .tdg-nets-logo{
+  left:30px!important;top:28px!important;
+  width:130px!important;height:48px!important;
+  max-width:130px!important;max-height:48px!important;
+  object-fit:contain!important;object-position:left center!important;
+}
+.tdg-nets-settlement .tdg-nets-transactions{
+  left:30px!important;bottom:28px!important;
+  font-size:18px!important;line-height:1.2!important;
+}
+.tdg-nets-settlement .tdg-nets-amount{
+  right:30px!important;top:50%!important;transform:translateY(-50%)!important;
+  font-size:42px!important;line-height:1.05!important;font-weight:600!important;
+  text-align:right!important;white-space:nowrap!important;
+}
+@media(max-width:700px){
+  .tdg-nets-settlement .tdg-nets-logo{left:20px!important;top:22px!important;width:105px!important;height:42px!important}
+  .tdg-nets-settlement .tdg-nets-transactions{left:20px!important;bottom:20px!important;font-size:16px!important}
+  .tdg-nets-settlement .tdg-nets-amount{right:20px!important;font-size:32px!important}
+}
+</style>
+<script>
+(function(){
+  function leaf(root,pattern){
+    return [...root.querySelectorAll('*')].find(function(el){
+      return !el.children.length && pattern.test((el.textContent||'').replace(/\\s+/g,' ').trim());
+    });
+  }
+  function findLogo(root){
+    return [...root.querySelectorAll('img,svg,[role="img"]')].find(function(el){
+      const meta=((el.getAttribute('alt')||'')+' '+(el.getAttribute('src')||'')+' '+(el.getAttribute('class')||'')+' '+(el.getAttribute('id')||'')).toLowerCase();
+      return /nets/.test(meta);
+    }) || leaf(root,/^NETS$/i);
+  }
+  function arrangeNETS(){
+    const cards=[...document.querySelectorAll('[class*="card" i],[class*="box" i],[class*="panel" i],[class*="tile" i]')];
+    cards.forEach(function(card){
+      const text=(card.innerText||'').replace(/\\s+/g,' ').trim();
+      if(!/\\bNETS\\b/i.test(text))return;
+      if(!/\\b\\d+\\s+transactions?\\b/i.test(text))return;
+      if(!/S\\$\\s*[-+]?\\d[\\d,.]*/i.test(text))return;
+      const logo=findLogo(card);
+      const transactions=leaf(card,/^\\d+\\s+transactions?$/i);
+      const amount=leaf(card,/^S\\$\\s*[-+]?\\d[\\d,.]*$/i);
+      if(!logo||!transactions||!amount)return;
+      card.classList.add('tdg-nets-settlement');
+      logo.classList.add('tdg-nets-logo');
+      transactions.classList.add('tdg-nets-transactions');
+      amount.classList.add('tdg-nets-amount');
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',arrangeNETS,{once:true});
+  else arrangeNETS();
+  new MutationObserver(function(){arrangeNETS()}).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>\`;
+  return html.replace('</body>',patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
