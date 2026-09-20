@@ -478,7 +478,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
 })();
 </script>`;
 
-  const liveDashboardPatch=String.raw\`
+  const liveDashboardPatch=String.raw`
 <style id="tdg-live-dashboard-data">
 .tdg-live-fresh{font-size:10px!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:rgba(255,255,255,.48)!important;margin-top:6px!important}
 .tdg-live-dot{display:inline-block!important;width:7px!important;height:7px!important;border-radius:50%!important;background:#54d88a!important;box-shadow:0 0 8px rgba(84,216,138,.55)!important;margin-right:6px!important}
