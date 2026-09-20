@@ -38,11 +38,12 @@ module.exports=async function handler(req,res){
     const property=propertyName();
     const client=new BetaAnalyticsDataClient({credentials:credentials()});
     const range={startDate:'28daysAgo',endDate:'today'};
-    const [report,cityReport,pageReport,countryReport]=await Promise.all([
+    const [report,cityReport,pageReport,countryReport,countryTrendReport]=await Promise.all([
       client.runReport({property,dateRanges:[range],metrics:[{name:'activeUsers'},{name:'newUsers'},{name:'sessions'},{name:'screenPageViews'},{name:'eventCount'},{name:'engagementRate'},{name:'ecommercePurchases'},{name:'totalRevenue'}]}),
       client.runReport({property,dateRanges:[range],dimensions:[{name:'city'}],metrics:[{name:'activeUsers'}],orderBys:[{metric:{metricName:'activeUsers'},desc:true}],limit:25}),
       client.runReport({property,dateRanges:[range],dimensions:[{name:'pagePathPlusQueryString'},{name:'unifiedScreenClass'}],metrics:[{name:'activeUsers'},{name:'screenPageViews'}],orderBys:[{metric:{metricName:'screenPageViews'},desc:true}],limit:25}),
-      client.runReport({property,dateRanges:[range],dimensions:[{name:'country'}],metrics:[{name:'activeUsers'},{name:'newUsers'},{name:'engagedSessions'},{name:'engagementRate'},{name:'userEngagementDuration'}],orderBys:[{metric:{metricName:'activeUsers'},desc:true}],limit:25})
+      client.runReport({property,dateRanges:[range],dimensions:[{name:'country'}],metrics:[{name:'activeUsers'},{name:'newUsers'},{name:'engagedSessions'},{name:'engagementRate'},{name:'userEngagementDuration'},{name:'eventCount'},{name:'keyEvents'},{name:'userKeyEventRate'},{name:'totalRevenue'}],orderBys:[{metric:{metricName:'activeUsers'},desc:true}],limit:25}),
+      client.runReport({property,dateRanges:[range],dimensions:[{name:'date'},{name:'country'}],metrics:[{name:'activeUsers'}],orderBys:[{dimension:{dimensionName:'date'}},{metric:{metricName:'activeUsers'},desc:true}],limit:500})
     ]);
     let realtimeUsers=0;
     if(typeof client.runRealtimeReport==='function'){
@@ -66,8 +67,21 @@ module.exports=async function handler(req,res){
       pagesAndScreens:(pageReport.rows||[]).map(r=>({pagePath:dim(r,0)||'/',screenClass:dim(r,1)||'Unknown',activeUsers:metricRow(r,0),pageViews:metricRow(r,1)})),
       demographicsByCountry:(countryReport.rows||[]).map(r=>{
         const activeUsers=metricRow(r,0), engagedSessions=metricRow(r,2), engagementRate=metricRow(r,3), userEngagementDuration=metricRow(r,4);
-        return {country:dim(r,0)||'Unknown',activeUsers,newUsers:metricRow(r,1),engagedSessions,engagementRate,engagedSessionsPerActiveUser:activeUsers?engagedSessions/activeUsers:0,averageEngagementTimePerActiveUser:activeUsers?userEngagementDuration/activeUsers:0};
+        return {
+          country:dim(r,0)||'Unknown',
+          activeUsers,
+          newUsers:metricRow(r,1),
+          engagedSessions,
+          engagementRate,
+          engagedSessionsPerActiveUser:activeUsers?engagedSessions/activeUsers:0,
+          averageEngagementTimePerActiveUser:activeUsers?userEngagementDuration/activeUsers:0,
+          eventCount:metricRow(r,5),
+          keyEvents:metricRow(r,6),
+          userKeyEventRate:metricRow(r,7),
+          totalRevenue:metricRow(r,8)
+        };
       }),
+      countryTrend:(countryTrendReport.rows||[]).map(r=>({date:dim(r,0),country:dim(r,1)||'Unknown',activeUsers:metricRow(r,0)})),
       source:'Google Analytics Data API'
     };
     res.statusCode=200;
