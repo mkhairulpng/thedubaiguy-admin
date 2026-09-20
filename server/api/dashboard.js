@@ -657,7 +657,7 @@ module.exports=(req,res)=>{
 })();
 </script>
 `;
-  const posFixPatch=String.raw`
+    const posFixPatch=String.raw`
 <style id="tdg-pos-live-product-fix">
 .tdg-pos-category-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 .tdg-pos-category-tabs button{border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--text);border-radius:999px;padding:8px 13px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
@@ -680,102 +680,83 @@ module.exports=(req,res)=>{
 </style>
 <script>
 (function(){
-  function esc(v){return htmlEscape(String(v==null?'':v))}
-  function imageFor(p){
+  function esc(v){return htmlEscape(String(v==null?"":v))}
+  function categoryFor(p){return String(p&&(p.category||p.cat||"")||"").toLowerCase()}
+  function stockFor(p){const n=Number(p&&p.qty);return Number.isFinite(n)?Math.max(0,n):(p&&p.soldout?0:1)}
+  function imageKeyFor(p){const a=p&&(Array.isArray(p.images)?p.images:(Array.isArray(p.imgs)?p.imgs:[]));return a[0]||p&&(p.image||p.img)||""}
+  function imageFor(p){const key=imageKeyFor(p);return key&&window.tdgPOSImageMap&&window.tdgPOSImageMap[key]?window.tdgPOSImageMap[key]:""}
+  async function loadImages(products){
+    const ids=[...new Set(products.map(imageKeyFor).filter(Boolean))];
+    if(!ids.length){window.tdgPOSImageMap={};return}
     try{
-      if(typeof tdgImage==='function'){
-        const value=tdgImage(p);
-        if(value)return value;
-      }
-    }catch(e){}
-    return p&&(p.image||p.img||(Array.isArray(p.imgs)?p.imgs[0]:''))||'';
-  }
-  function categoryFor(p){return String(p&&(p.category||p.cat||'')||'').toLowerCase()}
-  function stockFor(p){
-    const n=Number(p&&p.qty);
-    if(Number.isFinite(n))return Math.max(0,n);
-    return p&&p.soldout?0:1;
+      const d=await tdgJSON("/api/product-images?ids="+encodeURIComponent(ids.join(",")));
+      window.tdgPOSImageMap=(d&&d.data)||{};
+    }catch(e){window.tdgPOSImageMap={}}
   }
   function boot(){
-    if(!$('tdgPOSProducts'))return;
-    window.tdgPOSCategory=window.tdgPOSCategory||'all';
+    if(!$("tdgPOSProducts"))return;
+    window.tdgPOSCategory=window.tdgPOSCategory||"all";
     function installTabs(){
-      const box=$('tdgPOSProducts');if(!box||!box.parentElement)return;
-      let tabs=document.getElementById('tdgPOSCategoryTabs');
+      const box=$("tdgPOSProducts");if(!box||!box.parentElement)return;
+      let tabs=document.getElementById("tdgPOSCategoryTabs");
       if(!tabs){
-        tabs=document.createElement('div');tabs.id='tdgPOSCategoryTabs';tabs.className='tdg-pos-category-tabs';
-        [['all','All'],['men','Men'],['women','Women'],['perfumes','Perfume'],['home','Home']].forEach(function(c){
-          const b=document.createElement('button');b.type='button';b.dataset.cat=c[0];b.textContent=c[1];
-          b.addEventListener('click',function(){
-            window.tdgPOSCategory=c[0];
-            tabs.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
-            b.classList.add('active');
-            window.tdgRenderPOS();
-          });
+        tabs=document.createElement("div");tabs.id="tdgPOSCategoryTabs";tabs.className="tdg-pos-category-tabs";
+        [["all","All"],["men","Men"],["women","Women"],["perfumes","Perfume"],["home","Home"]].forEach(function(c){
+          const b=document.createElement("button");b.type="button";b.dataset.cat=c[0];b.textContent=c[1];
+          b.addEventListener("click",function(){window.tdgPOSCategory=c[0];tabs.querySelectorAll("button").forEach(function(x){x.classList.remove("active")});b.classList.add("active");window.tdgRenderPOS()});
           tabs.appendChild(b);
         });
         box.parentElement.insertBefore(tabs,box);
       }
-      tabs.querySelectorAll('button').forEach(function(b){b.classList.toggle('active',b.dataset.cat===window.tdgPOSCategory)});
+      tabs.querySelectorAll("button").forEach(function(b){b.classList.toggle("active",b.dataset.cat===window.tdgPOSCategory)});
     }
     window.tdgRenderPOS=async function(){
-      const box=$('tdgPOSProducts');if(!box)return;
+      const box=$("tdgPOSProducts");if(!box)return;
       installTabs();
       try{
-        const d=await tdgJSON('/api/products');
+        const d=await tdgJSON("/api/products");
         const live=Array.isArray(d&&d.data)?d.data:(Array.isArray(d)?d:[]);
-        if(!live.length)throw new Error('No products were returned by the live product database.');
+        if(!live.length)throw new Error("No products were returned by the live product database.");
         tdgPOSProducts=live;
+        await loadImages(live);
       }catch(e){
-        box.innerHTML='<div class="tdg-empty">Live products could not be loaded: '+esc(e.message)+'</div>';
-        if(typeof tdgRenderPOSCart==='function')tdgRenderPOSCart();
+        box.innerHTML="<div class=\"tdg-empty\">Live products could not be loaded: "+esc(e.message)+"</div>";
+        if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
         return;
       }
-      const q=String($('tdgPOSSearch')&&$('tdgPOSSearch').value||'').toLowerCase().trim();
-      const cat=window.tdgPOSCategory||'all';
-      const rows=tdgPOSProducts.filter(function(p){
-        return (cat==='all'||categoryFor(p)===cat) && String(p.name||'').toLowerCase().includes(q);
-      }).slice(0,100);
-      box.classList.add('tdg-pos-live-grid');
+      const q=String($("tdgPOSSearch")&&$("tdgPOSSearch").value||"").toLowerCase().trim();
+      const cat=window.tdgPOSCategory||"all";
+      const rows=tdgPOSProducts.filter(function(p){return (cat==="all"||categoryFor(p)===cat)&&String(p.name||"").toLowerCase().includes(q)}).slice(0,100);
+      box.classList.add("tdg-pos-live-grid");
       box.innerHTML=rows.map(function(p){
         const stock=stockFor(p),sold=stock<=0,image=imageFor(p);
-        const id=JSON.stringify(String(p.id)).replace(/</g,'\\u003c');
-        return '<button type="button" class="tdg-pos-select tdg-pos-live-item'+(sold?' tdg-pos-soldout':'')+'"'+(sold?' disabled aria-disabled="true"':'')+' onclick="tdgAddPOS('+id+')">'+
-          '<div class="tdg-pos-live-image">'+(image?'<img src="'+esc(image)+'" alt="'+esc(p.name||'Product')+'" loading="lazy" onerror="this.closest(\\'.tdg-pos-live-image\\').innerHTML=\\'<span class=\\\'tdg-pos-no-image\\\'>Image unavailable</span>\\'">':'<span class="tdg-pos-no-image">No image</span>')+'</div>'+
-          '<span class="tdg-pos-live-name">'+esc(p.name||'Product')+'</span>'+
-          '<div class="tdg-pos-live-price">SkpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+posFixPatch+'</body>');
-}
-
-module.exports=(req,res)=>{
-  if(!isAdmin(req)){res.writeHead(302,{Location:'/'});return res.end()}
-  const html=fs.readFileSync(path.join(process.cwd(),'public','dashboard.html'),'utf8');
-  res.setHeader('Content-Type','text/html; charset=utf-8');
-  res.setHeader('Cache-Control','private, no-store');
-  res.status(200).send(injectPOSInventoryLink(html));
-};
-+Number(p.price||0).toFixed(2)+'</div>'+
-          '<div class="tdg-pos-live-stock '+(sold?'tdg-pos-sold-label':'tdg-pos-in-stock')+'">'+(sold?'SOLD OUT':stock+' in stock')+'</div>'+
-        '</button>';
-      }).join('')||'<div class="tdg-pos-category-empty">No products in this category.</div>';
-      if(typeof tdgRenderPOSCart==='function')tdgRenderPOSCart();
+        const id=JSON.stringify(String(p.id)).replace(/</g,"\\u003c");
+        return "<button type=\"button\" class=\"tdg-pos-select tdg-pos-live-item"+(sold?" tdg-pos-soldout":"")+"\""+(sold?" disabled aria-disabled=\"true\"":"")+" onclick=\"tdgAddPOS("+id+")\">"+
+          "<div class=\"tdg-pos-live-image\">"+(image?"<img src=\""+esc(image)+"\" alt=\""+esc(p.name||"Product")+"\" loading=\"lazy\">":"<span class=\"tdg-pos-no-image\">Image unavailable</span>")+"</div>"+
+          "<span class=\"tdg-pos-live-name\">"+esc(p.name||"Product")+"</span>"+
+          "<div class=\"tdg-pos-live-price\">S$"+Number(p.price||0).toFixed(2)+"</div>"+
+          "<div class=\"tdg-pos-live-stock "+(sold?"tdg-pos-sold-label":"tdg-pos-in-stock")+"\">"+(sold?"SOLD OUT":stock+" in stock")+"</div>"+
+        "</button>";
+      }).join("")||"<div class=\"tdg-pos-category-empty\">No products in this category.</div>";
+      if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
     };
     window.tdgAddPOS=function(id){
-      const p=(Array.isArray(tdgPOSProducts)?tdgPOSProducts:[]).find(x=>String(x.id)===String(id));
+      const p=(Array.isArray(tdgPOSProducts)?tdgPOSProducts:[]).find(function(x){return String(x.id)===String(id)});
       if(!p)return;
       const available=stockFor(p);
-      const existing=tdgPOSCart.find(x=>String(x.id)===String(p.id));
+      const existing=tdgPOSCart.find(function(x){return String(x.id)===String(p.id)});
       const current=Number(existing&&existing.qty||0);
-      if(available<=0){alert((p.name||'This product')+' is sold out.');return;}
-      if(current+1>available){alert('Not enough stock for '+(p.name||'this product')+'. Only '+available+' available.');return;}
-      if(existing)existing.qty=current+1;else tdgPOSCart.push({...p,qty:1});
-      if(typeof tdgRenderPOSCart==='function')tdgRenderPOSCart();
+      if(available<=0){alert((p.name||"This product")+" is sold out.");return}
+      if(current+1>available){alert("Not enough stock for "+(p.name||"this product")+". Only "+available+" available.");return}
+      if(existing)existing.qty=current+1;else tdgPOSCart.push(Object.assign({},p,{qty:1}));
+      if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
     };
     window.tdgPOSRefreshProducts=function(){return window.tdgRenderPOS()};
     window.tdgRenderPOS();
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
 })();
-</script>`;
+</script>`
 
   return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+posFixPatch+'</body>');
 }
