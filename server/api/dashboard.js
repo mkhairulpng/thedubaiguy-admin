@@ -89,7 +89,7 @@ function injectPOSInventoryLink(html){
 })();
 </script>`;
 
-  const auraPatch=String.raw\`
+  const auraPatch=String.raw`
 <style id="tdg-aura-logo-polish">
 /* TheDubaiGuy dashboard branding */
 img[alt*="TheDubaiGuy" i],
