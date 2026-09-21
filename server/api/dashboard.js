@@ -669,7 +669,7 @@ module.exports=(req,res)=>{
 })();
 </script>
 `;
-    const posFixPatch=String.raw\`
+    const posFixPatch=String.raw`
 <style id="tdg-pos-live-catalog-v2">
 /* Live Cashier POS catalog — image-first four-column retail layout. */
 .tdg-pos-category-tabs{
@@ -898,7 +898,7 @@ module.exports=(req,res)=>{
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});
   else boot();
 })();
-</script>\`
+</script>`
 
   return html.replace('</body>','<script src="/product-images.js"></script>'+kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+posFixPatch+'</body>');
 }
