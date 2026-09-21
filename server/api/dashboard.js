@@ -768,10 +768,580 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 @media(max-width:1180px){#tdgPOSProducts.tdg-pos-live-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:820px){#tdgPOSProducts.tdg-pos-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:520px){#tdgPOSProducts.tdg-pos-live-grid{grid-template-columns:1fr!important}}
-.tdg-pos-transactions-panel{margin-top:18px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:rgba(255,255,255,.025)!important;overflow:hidden!important}.tdg-pos-transactions-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:13px 14px!important;border-bottom:1px solid var(--line)!important}.tdg-pos-transactions-title{font-size:11px!important;font-weight:700!important;letter-spacing:.12em!important}.tdg-pos-transactions-sub{font-size:9px!important;color:var(--muted)!important;margin-top:3px!important}.tdg-pos-transactions-refresh,.tdg-pos-refund{border:1px solid var(--line)!important;border-radius:7px!important;background:rgba(255,255,255,.05)!important;color:var(--text)!important;padding:7px 10px!important;font-size:10px!important;cursor:pointer!important}.tdg-pos-refund{background:rgba(190,90,90,.12)!important;border-color:rgba(220,120,120,.25)!important}.tdg-pos-transactions-table-wrap{overflow:auto!important}.tdg-pos-transactions-table{width:100%!important;border-collapse:collapse!important;min-width:900px!important;font-size:9px!important}.tdg-pos-transactions-table th,.tdg-pos-transactions-table td{padding:8px 10px!important;border-bottom:1px solid rgba(255,255,255,.06)!important;text-align:left!important;white-space:nowrap!important}.tdg-pos-transactions-table th{font-size:8px!important;color:var(--muted)!important;text-transform:uppercase!important;letter-spacing:.06em!important}.tdg-pos-tx-status.paid{color:#8ee6a8!important}.tdg-pos-tx-status.refunded,.tdg-pos-refunded{color:#ff9b9b!important}.tdg-pos-tx-error{color:#ff9b9b!important}
+.tdg-pos-cart-panel{margin-top:12px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:rgba(255,255,255,.025)!important;padding:12px!important}.tdg-pos-cart-title{font-size:10px!important;font-weight:700!important;letter-spacing:.1em!important;margin-bottom:8px!important}.tdg-pos-cart-row,.tdg-pos-cart-total{display:flex!important;justify-content:space-between!important;gap:12px!important;padding:7px 0!important;border-bottom:1px solid rgba(255,255,255,.06)!important;font-size:10px!important}.tdg-pos-cart-total{border-bottom:0!important;padding-top:10px!important;font-size:12px!important}.tdg-pos-cart-empty{font-size:10px!important;color:var(--muted)!important}.tdg-pos-transactions-panel{margin-top:18px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:rgba(255,255,255,.025)!important;overflow:hidden!important}.tdg-pos-transactions-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:13px 14px!important;border-bottom:1px solid var(--line)!important}.tdg-pos-transactions-title{font-size:11px!important;font-weight:700!important;letter-spacing:.12em!important}.tdg-pos-transactions-sub{font-size:9px!important;color:var(--muted)!important;margin-top:3px!important}.tdg-pos-transactions-refresh,.tdg-pos-refund{border:1px solid var(--line)!important;border-radius:7px!important;background:rgba(255,255,255,.05)!important;color:var(--text)!important;padding:7px 10px!important;font-size:10px!important;cursor:pointer!important}.tdg-pos-refund{background:rgba(190,90,90,.12)!important;border-color:rgba(220,120,120,.25)!important}.tdg-pos-transactions-table-wrap{overflow:auto!important}.tdg-pos-transactions-table{width:100%!important;border-collapse:collapse!important;min-width:900px!important;font-size:9px!important}.tdg-pos-transactions-table th,.tdg-pos-transactions-table td{padding:8px 10px!important;border-bottom:1px solid rgba(255,255,255,.06)!important;text-align:left!important;white-space:nowrap!important}.tdg-pos-transactions-table th{font-size:8px!important;color:var(--muted)!important;text-transform:uppercase!important;letter-spacing:.06em!important}.tdg-pos-tx-status.paid{color:#8ee6a8!important}.tdg-pos-tx-status.refunded,.tdg-pos-refunded{color:#ff9b9b!important}.tdg-pos-tx-error{color:#ff9b9b!important}
 </style>
 <script>
 (function(){
+  /* POS state must exist before any product button can call tdgAddPOS. */
+  if(!Array.isArray(window.tdgPOSProducts))window.tdgPOSProducts=[];
+  if(!Array.isArray(window.tdgPOSCart))window.tdgPOSCart=[];
+  if(!window.tdgPOSSelectedPayment)window.tdgPOSSelectedPayment="NETS";
+  if(typeof window.tdgRenderPOSCart!=="function"){
+    window.tdgRenderPOSCart=function(){
+      const host=document.getElementById("tdgPOSCartPanel");
+      if(!host)return;
+      const cart=Array.isArray(window.tdgPOSCart)?window.tdgPOSCart:[];
+      if(!cart.length){
+        host.innerHTML='<div class="tdg-pos-cart-empty">No items added yet.</div>';
+        return;
+      }
+      const total=cart.reduce(function(n,p){return n+Number(p.price||0)*Number(p.qty||1)},0);
+      host.innerHTML='<div class="tdg-pos-cart-title">CART · '+cart.reduce(function(n,p){return n+Number(p.qty||0)},0)+' ITEMS</div>'+
+        cart.map(function(p){
+          const qty=Math.max(1,Number(p.qty||1));
+          return '<div class="tdg-pos-cart-row"><span>'+htmlEscape(p.name||"Product")+' × '+qty+'</span><strong>S
+    const n=Number(p&&p.qty);
+    return Number.isFinite(n)?Math.max(0,n):(p&&p.soldout?0:1);
+  }
+  function imageKeyFor(p){
+    const a=p&&(Array.isArray(p.images)?p.images:(Array.isArray(p.imgs)?p.imgs:[]));
+    return a[0]||p&&(p.image||p.img)||"";
+  }
+  function imageSrcFor(p){
+    const key=imageKeyFor(p);
+    if(!key)return "";
+    return "/api/product-image?id="+encodeURIComponent(String(key));
+  }
+  function categoryFor(p){
+    return String(p&&(p.category||p.cat||"")||"").toLowerCase();
+  }
+  function ensureTabs(){
+    const box=$("tdgPOSProducts");
+    if(!box||!box.parentElement)return;
+    let tabs=document.getElementById("tdgPOSCategoryTabs");
+    if(!tabs){
+      tabs=document.createElement("div");
+      tabs.id="tdgPOSCategoryTabs";
+      tabs.className="tdg-pos-category-tabs";
+      [["all","All"],["men","Men"],["women","Women"],["home","Home"],["perfumes","Perfume"]].forEach(function(c){
+        const b=document.createElement("button");
+        b.type="button";b.dataset.cat=c[0];b.textContent=c[1];
+        b.addEventListener("click",function(){
+          window.tdgPOSCategory=c[0];
+          tabs.querySelectorAll("button").forEach(function(x){x.classList.remove("active")});
+          b.classList.add("active");
+          window.tdgRenderPOS();
+        });
+        tabs.appendChild(b);
+      });
+      box.parentElement.insertBefore(tabs,box);
+    }
+    tabs.querySelectorAll("button").forEach(function(b){
+      b.classList.toggle("active",b.dataset.cat===(window.tdgPOSCategory||"all"));
+    });
+  }
+  window.tdgRenderPOS=async function(){
+    const box=$("tdgPOSProducts");if(!box)return;
+    ensureTabs();
+    box.classList.add("tdg-pos-live-grid");
+    box.innerHTML='<div class="tdg-empty">Loading live products…</div>';
+    try{
+      const d=await tdgJSON("/api/products");
+      const live=Array.isArray(d&&d.data)?d.data:(Array.isArray(d)?d:[]);
+      if(!live.length)throw new Error("No products were returned by the live product database.");
+      tdgPOSProducts=live;
+    }catch(e){
+      box.innerHTML='<div class="tdg-empty">Live products could not be loaded: '+esc(e.message)+'</div>';
+      if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
+      return;
+    }
+
+    const q=String($("tdgPOSSearch")&&$("tdgPOSSearch").value||"").toLowerCase().trim();
+    const cat=window.tdgPOSCategory||"all";
+    const rows=tdgPOSProducts.filter(function(p){
+      const pc=categoryFor(p);
+      const categoryMatch=cat==="all"||pc===cat||(cat==="perfume"&&pc==="perfumes")||(cat==="perfumes"&&pc==="perfume");
+      const queryMatch=!q||String(p.name||"").toLowerCase().includes(q)||String(p.id||"").toLowerCase().includes(q);
+      return categoryMatch&&queryMatch;
+    }).slice(0,100);
+
+    const count=document.getElementById("tdgPOSProductCount");
+    if(count)count.textContent="Showing "+rows.length+" of "+tdgPOSProducts.length+" products";
+
+    box.innerHTML=rows.map(function(p){
+      const stock=stockFor(p),sold=stock<=0,image=imageSrcFor(p);
+      const id=JSON.stringify(String(p.id)).replace(/</g,"\\\\u003c");
+      const safeId=esc(String(p.id));
+      const badge=p.badge?'<span class="tdg-pos-live-badge">'+esc(p.badge)+'</span>':"";
+      return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'" data-pos-id="'+safeId+'" onclick="tdgAddPOS(this.dataset.id)" role="button" tabindex="'+(sold?"-1":"0")+'"'+(sold?' aria-disabled="true"':'')+'>'+
+        '<div class="tdg-pos-live-image">'+
+          (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';">':'')+
+          badge+
+          '<span class="tdg-pos-image-placeholder" style="display:'+(image?"none":"flex")+'">Image unavailable</span>'+
+        '</div>'+
+        '<div class="tdg-pos-live-body">'+
+          '<div class="tdg-pos-live-name">'+esc(p.name||"Product")+'</div>'+
+          '<div class="tdg-pos-live-price">S$'+Number(p.price||0).toFixed(2)+'</div>'+
+          '<div class="tdg-pos-live-stock '+(sold?"tdg-pos-sold-label":"tdg-pos-in-stock")+'">'+(sold?"0 in stock":stock+" in stock")+'</div>'+
+        '</div>'+
+        '<button type="button" class="tdg-pos-live-add" '+(sold?"disabled":"")+' onclick="event.stopPropagation();tdgAddPOS(this.closest('.tdg-pos-live-card').dataset.id)">'+(sold?"Sold Out":"+ Add")+'</button>'+
+      '</div>';
+    }).join("")||'<div class="tdg-pos-category-empty">No products in this category.</div>';
+
+    if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
+  };
+
+  window.tdgAddPOS=function(id){
+    const p=(Array.isArray(tdgPOSProducts)?tdgPOSProducts:[]).find(function(x){return String(x.id)===String(id)});
+    if(!p)return;
+    const available=stockFor(p);
+    const existing=tdgPOSCart.find(function(x){return String(x.id)===String(p.id)});
+    const current=Number(existing&&existing.qty||0);
+    if(available<=0){alert((p.name||"This product")+" is sold out.");return}
+    if(current+1>available){alert("Not enough stock for "+(p.name||"this product")+". Only "+available+" available.");return}
+    if(existing)existing.qty=current+1;else tdgPOSCart.push(Object.assign({},p,{qty:1}));
+    if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
+  };
+
+
+  function ensureTransactionPanel(){
+    if(document.getElementById("tdgPOSTransactionsPanel"))return;
+    const box=$("tdgPOSProducts"); if(!box||!box.parentElement)return;
+    const panel=document.createElement("section");
+    panel.id="tdgPOSTransactionsPanel";
+    panel.className="tdg-pos-transactions-panel";
+    panel.innerHTML='<div class="tdg-pos-transactions-head"><div><div class="tdg-pos-transactions-title">TRANSACTIONS</div><div class="tdg-pos-transactions-sub">Cashier POS sales and refunds</div></div><button type="button" class="tdg-pos-transactions-refresh" onclick="tdgPOSLoadTransactions()">Refresh</button></div><div class="tdg-pos-transactions-table-wrap"><table class="tdg-pos-transactions-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Payment</th><th>Total</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="tdgPOSTransactionsBody"><tr><td colspan="8">Loading transactions…</td></tr></tbody></table></div>';
+    box.parentElement.insertAdjacentElement("afterend",panel);
+    tdgPOSLoadTransactions();
+  }
+  window.tdgPOSLoadTransactions=async function(){
+    const body=document.getElementById("tdgPOSTransactionsBody"); if(!body)return;
+    body.innerHTML='<tr><td colspan="8">Loading transactions…</td></tr>';
+    try{
+      const d=await tdgJSON("/api/orders");
+      const rows=Array.isArray(d&&d.data)?d.data:[];
+      const pos=rows.filter(function(o){return String(o.delivery_method||"").toUpperCase()==="POS";}).slice(0,100);
+      body.innerHTML=pos.length?pos.map(function(o){
+        const items=Array.isArray(o.items)?o.items:[];
+        const qty=items.reduce(function(n,i){return n+Number(i.qty||0)},0);
+        const refunded=String(o.status||"").toUpperCase()==="REFUNDED"||String(o.payment_status||"").toUpperCase()==="REFUNDED";
+        const date=o.created_at?new Date(o.created_at).toLocaleString():"—";
+        return '<tr><td><strong>'+esc(o.order_number||"—")+'</strong></td><td>'+esc(o.customer_name||"—")+'</td><td>'+qty+'</td><td>'+esc(o.payment_method||"—")+'</td><td>S$'+Number(o.total||0).toFixed(2)+'</td><td><span class="tdg-pos-tx-status '+(refunded?"refunded":"paid")+'">'+esc(o.status||o.payment_status||"—")+'</span></td><td>'+esc(date)+'</td><td>'+(refunded?'<span class="tdg-pos-refunded">Refunded</span>':'<button type="button" class="tdg-pos-refund" onclick="tdgPOSRefund(this.dataset.order)" data-order="'+esc(o.order_number||"")+'">Refund</button>')+'</td></tr>';
+      }).join(""):'<tr><td colspan="8">No POS transactions yet.</td></tr>';
+    }catch(e){body.innerHTML='<tr><td colspan="8" class="tdg-pos-tx-error">'+esc(e.message||"Could not load transactions")+'</td></tr>';}
+  };
+  window.tdgPOSRefund=async function(orderNumber){
+    if(!orderNumber)return;
+    if(!confirm("Refund transaction "+orderNumber+"? The stock will be returned to inventory."))return;
+    try{
+      const d=await tdgJSON("/api/pos-refund",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order_number:String(orderNumber)})});
+      alert("Refund completed: "+String(d&&d.data&&d.data.order_number||orderNumber)+" · S$"+Number(d&&d.data&&d.data.refund_total||0).toFixed(2));
+      await tdgPOSLoadTransactions();
+      await tdgRenderPOS();
+    }catch(e){alert("Refund failed: "+e.message);}
+  };
+
+  function boot(){
+    if(!$("tdgPOSProducts"))return;
+    ensurePOSCartPanel();
+    window.tdgPOSCategory=window.tdgPOSCategory||"all";
+    const box=$("tdgPOSProducts");
+    if(box&&box.parentElement&&!document.getElementById("tdgPOSProductCount")){
+      const count=document.createElement("div");
+      count.id="tdgPOSProductCount";
+      count.className="tdg-pos-product-count";
+      box.parentElement.insertBefore(count,box);
+    }
+    window.tdgPOSRefreshProducts=function(){return window.tdgRenderPOS()};
+    window.tdgRenderPOS();
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});
+  else boot();
+})();
+</script>`
+
+
+const tdgPOSHardeningPatch=String.raw`
+<style id="tdg-pos-hardening-style">
+#tdgPOSCategoryTabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+#tdgPOSCategoryTabs button{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:999px;padding:7px 14px;font:600 12px inherit;cursor:pointer}
+#tdgPOSCategoryTabs button.active{background:rgba(218,196,162,.18);border-color:rgba(218,196,162,.65)}
+#tdgPOSProducts .tdg-pos-live-card{cursor:pointer!important}
+</style>
+<script>
+(function(){
+  const CAT=[
+    ["all","All"],
+    ["men","Men"],
+    ["women","Women"],
+    ["home","Home"],
+    ["perfume","Perfume"]
+  ];
+  function norm(v){
+    v=String(v||"").trim().toLowerCase();
+    if(v==="perfumes"||v==="fragrance"||v==="fragrances")return "perfume";
+    if(v==="female"||v==="ladies")return "women";
+    return v;
+  }
+  function ensure(){
+    const box=document.getElementById("tdgPOSProducts");
+    if(!box)return;
+    let bar=document.getElementById("tdgPOSCategoryTabs");
+    if(!bar){
+      bar=document.createElement("div");
+      bar.id="tdgPOSCategoryTabs";
+      box.parentNode.insertBefore(bar,box);
+    }
+    if(bar.dataset.tdgReady!=="1"){
+      bar.innerHTML=CAT.map((c,i)=>'<button type="button" data-cat="'+c[0]+'" class="'+(i===0?"active":"")+'">'+c[1]+"</button>").join("");
+      bar.dataset.tdgReady="1";
+      bar.addEventListener("click",function(e){
+        const b=e.target.closest("button[data-cat]");if(!b)return;
+        bar.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+        window.tdgPOSCategory=b.dataset.cat;
+        if(typeof window.tdgRenderPOS==="function")window.tdgRenderPOS();
+      });
+    }
+    return box;
+  }
+  function products(){return Array.isArray(window.tdgPOSProducts)?window.tdgPOSProducts:[]}
+  function filter(cat){
+    const box=document.getElementById("tdgPOSProducts");if(!box)return;
+    const ps=products(), cards=[...box.querySelectorAll(".tdg-pos-live-card")];
+    cards.forEach((card,i)=>{
+      const id=String(card.dataset.posId||"");
+      const p=ps.find(x=>String(x.id)===id)||ps[i];
+      card.dataset.posCategory=norm(p&& (p.category||p.cat));
+      card.style.display=(cat==="all"||card.dataset.posCategory===cat)?"":"none";
+    });
+  }
+  function bind(){
+    const box=ensure();if(!box)return;
+    box.addEventListener("click",function(e){
+      const card=e.target.closest(".tdg-pos-live-card");if(!card||!box.contains(card))return;
+      e.preventDefault();e.stopPropagation();
+      const id=card.dataset.posId||"";
+      if(id && typeof window.tdgAddPOS==="function")window.tdgAddPOS(id);
+    },true);
+  }
+  function wrap(){
+    if(typeof window.tdgRenderPOS!=="function"||window.tdgRenderPOS.__tdgHardening)return;
+    const original=window.tdgRenderPOS;
+    const wrapped=async function(){
+      await original.apply(this,arguments);
+      const box=ensure();if(!box)return;
+      const ps=products(), cards=[...box.querySelectorAll(".tdg-pos-live-card")];
+      cards.forEach((card,i)=>{
+        const p=ps.find(x=>String(x.id)===String(card.dataset.posId||""))||ps[i];
+        if(p)card.dataset.posId=String(p.id);
+        card.removeAttribute("onclick");
+        card.querySelectorAll("[onclick]").forEach(x=>x.removeAttribute("onclick"));
+        card.dataset.posCategory=norm(p&&(p.category||p.cat));
+      });
+      const active=box.parentNode.querySelector("#tdgPOSCategoryTabs button.active");
+      filter(active?active.dataset.cat:"all");
+    };
+    wrapped.__tdgHardening=true;
+    window.tdgRenderPOS=wrapped;
+    bind();
+  }
+  function boot(){
+    wrap();ensure();
+    const box=document.getElementById("tdgPOSProducts");
+    if(box && !box.dataset.tdgObserver){
+      box.dataset.tdgObserver="1";
+      new MutationObserver(function(){wrap();}).observe(box,{childList:true});
+    }
+  }
+  boot();
+  document.addEventListener("DOMContentLoaded",boot);
+  setTimeout(boot,100);
+  setTimeout(boot,500);
+})();
+</script>`;
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posFixPatch+'</body>');
+}
+
+module.exports=(req,res)=>{
+  if(!isAdmin(req)){res.writeHead(302,{Location:'/'});return res.end()}
+  const html=fs.readFileSync(path.join(process.cwd(),'public','dashboard.html'),'utf8');
+  res.setHeader('Content-Type','text/html; charset=utf-8');
+  res.setHeader('Cache-Control','private, no-store');
+  res.status(200).send(injectPOSInventoryLink(html));
+};
++(Number(p.price||0)*qty).toFixed(2)+'</strong></div>';
+        }).join("")+
+        '<div class="tdg-pos-cart-total"><span>Total</span><strong>S
+    const n=Number(p&&p.qty);
+    return Number.isFinite(n)?Math.max(0,n):(p&&p.soldout?0:1);
+  }
+  function imageKeyFor(p){
+    const a=p&&(Array.isArray(p.images)?p.images:(Array.isArray(p.imgs)?p.imgs:[]));
+    return a[0]||p&&(p.image||p.img)||"";
+  }
+  function imageSrcFor(p){
+    const key=imageKeyFor(p);
+    if(!key)return "";
+    return "/api/product-image?id="+encodeURIComponent(String(key));
+  }
+  function categoryFor(p){
+    return String(p&&(p.category||p.cat||"")||"").toLowerCase();
+  }
+  function ensureTabs(){
+    const box=$("tdgPOSProducts");
+    if(!box||!box.parentElement)return;
+    let tabs=document.getElementById("tdgPOSCategoryTabs");
+    if(!tabs){
+      tabs=document.createElement("div");
+      tabs.id="tdgPOSCategoryTabs";
+      tabs.className="tdg-pos-category-tabs";
+      [["all","All"],["men","Men"],["women","Women"],["home","Home"],["perfumes","Perfume"]].forEach(function(c){
+        const b=document.createElement("button");
+        b.type="button";b.dataset.cat=c[0];b.textContent=c[1];
+        b.addEventListener("click",function(){
+          window.tdgPOSCategory=c[0];
+          tabs.querySelectorAll("button").forEach(function(x){x.classList.remove("active")});
+          b.classList.add("active");
+          window.tdgRenderPOS();
+        });
+        tabs.appendChild(b);
+      });
+      box.parentElement.insertBefore(tabs,box);
+    }
+    tabs.querySelectorAll("button").forEach(function(b){
+      b.classList.toggle("active",b.dataset.cat===(window.tdgPOSCategory||"all"));
+    });
+  }
+  window.tdgRenderPOS=async function(){
+    const box=$("tdgPOSProducts");if(!box)return;
+    ensureTabs();
+    box.classList.add("tdg-pos-live-grid");
+    box.innerHTML='<div class="tdg-empty">Loading live products…</div>';
+    try{
+      const d=await tdgJSON("/api/products");
+      const live=Array.isArray(d&&d.data)?d.data:(Array.isArray(d)?d:[]);
+      if(!live.length)throw new Error("No products were returned by the live product database.");
+      tdgPOSProducts=live;
+    }catch(e){
+      box.innerHTML='<div class="tdg-empty">Live products could not be loaded: '+esc(e.message)+'</div>';
+      if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
+      return;
+    }
+
+    const q=String($("tdgPOSSearch")&&$("tdgPOSSearch").value||"").toLowerCase().trim();
+    const cat=window.tdgPOSCategory||"all";
+    const rows=tdgPOSProducts.filter(function(p){
+      const pc=categoryFor(p);
+      const categoryMatch=cat==="all"||pc===cat||(cat==="perfume"&&pc==="perfumes")||(cat==="perfumes"&&pc==="perfume");
+      const queryMatch=!q||String(p.name||"").toLowerCase().includes(q)||String(p.id||"").toLowerCase().includes(q);
+      return categoryMatch&&queryMatch;
+    }).slice(0,100);
+
+    const count=document.getElementById("tdgPOSProductCount");
+    if(count)count.textContent="Showing "+rows.length+" of "+tdgPOSProducts.length+" products";
+
+    box.innerHTML=rows.map(function(p){
+      const stock=stockFor(p),sold=stock<=0,image=imageSrcFor(p);
+      const id=JSON.stringify(String(p.id)).replace(/</g,"\\\\u003c");
+      const safeId=esc(String(p.id));
+      const badge=p.badge?'<span class="tdg-pos-live-badge">'+esc(p.badge)+'</span>':"";
+      return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'" data-pos-id="'+safeId+'" onclick="tdgAddPOS(this.dataset.id)" role="button" tabindex="'+(sold?"-1":"0")+'"'+(sold?' aria-disabled="true"':'')+'>'+
+        '<div class="tdg-pos-live-image">'+
+          (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';">':'')+
+          badge+
+          '<span class="tdg-pos-image-placeholder" style="display:'+(image?"none":"flex")+'">Image unavailable</span>'+
+        '</div>'+
+        '<div class="tdg-pos-live-body">'+
+          '<div class="tdg-pos-live-name">'+esc(p.name||"Product")+'</div>'+
+          '<div class="tdg-pos-live-price">S$'+Number(p.price||0).toFixed(2)+'</div>'+
+          '<div class="tdg-pos-live-stock '+(sold?"tdg-pos-sold-label":"tdg-pos-in-stock")+'">'+(sold?"0 in stock":stock+" in stock")+'</div>'+
+        '</div>'+
+        '<button type="button" class="tdg-pos-live-add" '+(sold?"disabled":"")+' onclick="event.stopPropagation();tdgAddPOS(this.closest('.tdg-pos-live-card').dataset.id)">'+(sold?"Sold Out":"+ Add")+'</button>'+
+      '</div>';
+    }).join("")||'<div class="tdg-pos-category-empty">No products in this category.</div>';
+
+    if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
+  };
+
+  window.tdgAddPOS=function(id){
+    const p=(Array.isArray(tdgPOSProducts)?tdgPOSProducts:[]).find(function(x){return String(x.id)===String(id)});
+    if(!p)return;
+    const available=stockFor(p);
+    const existing=tdgPOSCart.find(function(x){return String(x.id)===String(p.id)});
+    const current=Number(existing&&existing.qty||0);
+    if(available<=0){alert((p.name||"This product")+" is sold out.");return}
+    if(current+1>available){alert("Not enough stock for "+(p.name||"this product")+". Only "+available+" available.");return}
+    if(existing)existing.qty=current+1;else tdgPOSCart.push(Object.assign({},p,{qty:1}));
+    if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
+  };
+
+
+  function ensureTransactionPanel(){
+    if(document.getElementById("tdgPOSTransactionsPanel"))return;
+    const box=$("tdgPOSProducts"); if(!box||!box.parentElement)return;
+    const panel=document.createElement("section");
+    panel.id="tdgPOSTransactionsPanel";
+    panel.className="tdg-pos-transactions-panel";
+    panel.innerHTML='<div class="tdg-pos-transactions-head"><div><div class="tdg-pos-transactions-title">TRANSACTIONS</div><div class="tdg-pos-transactions-sub">Cashier POS sales and refunds</div></div><button type="button" class="tdg-pos-transactions-refresh" onclick="tdgPOSLoadTransactions()">Refresh</button></div><div class="tdg-pos-transactions-table-wrap"><table class="tdg-pos-transactions-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Payment</th><th>Total</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="tdgPOSTransactionsBody"><tr><td colspan="8">Loading transactions…</td></tr></tbody></table></div>';
+    box.parentElement.insertAdjacentElement("afterend",panel);
+    tdgPOSLoadTransactions();
+  }
+  window.tdgPOSLoadTransactions=async function(){
+    const body=document.getElementById("tdgPOSTransactionsBody"); if(!body)return;
+    body.innerHTML='<tr><td colspan="8">Loading transactions…</td></tr>';
+    try{
+      const d=await tdgJSON("/api/orders");
+      const rows=Array.isArray(d&&d.data)?d.data:[];
+      const pos=rows.filter(function(o){return String(o.delivery_method||"").toUpperCase()==="POS";}).slice(0,100);
+      body.innerHTML=pos.length?pos.map(function(o){
+        const items=Array.isArray(o.items)?o.items:[];
+        const qty=items.reduce(function(n,i){return n+Number(i.qty||0)},0);
+        const refunded=String(o.status||"").toUpperCase()==="REFUNDED"||String(o.payment_status||"").toUpperCase()==="REFUNDED";
+        const date=o.created_at?new Date(o.created_at).toLocaleString():"—";
+        return '<tr><td><strong>'+esc(o.order_number||"—")+'</strong></td><td>'+esc(o.customer_name||"—")+'</td><td>'+qty+'</td><td>'+esc(o.payment_method||"—")+'</td><td>S$'+Number(o.total||0).toFixed(2)+'</td><td><span class="tdg-pos-tx-status '+(refunded?"refunded":"paid")+'">'+esc(o.status||o.payment_status||"—")+'</span></td><td>'+esc(date)+'</td><td>'+(refunded?'<span class="tdg-pos-refunded">Refunded</span>':'<button type="button" class="tdg-pos-refund" onclick="tdgPOSRefund(this.dataset.order)" data-order="'+esc(o.order_number||"")+'">Refund</button>')+'</td></tr>';
+      }).join(""):'<tr><td colspan="8">No POS transactions yet.</td></tr>';
+    }catch(e){body.innerHTML='<tr><td colspan="8" class="tdg-pos-tx-error">'+esc(e.message||"Could not load transactions")+'</td></tr>';}
+  };
+  window.tdgPOSRefund=async function(orderNumber){
+    if(!orderNumber)return;
+    if(!confirm("Refund transaction "+orderNumber+"? The stock will be returned to inventory."))return;
+    try{
+      const d=await tdgJSON("/api/pos-refund",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order_number:String(orderNumber)})});
+      alert("Refund completed: "+String(d&&d.data&&d.data.order_number||orderNumber)+" · S$"+Number(d&&d.data&&d.data.refund_total||0).toFixed(2));
+      await tdgPOSLoadTransactions();
+      await tdgRenderPOS();
+    }catch(e){alert("Refund failed: "+e.message);}
+  };
+
+  function boot(){
+    if(!$("tdgPOSProducts"))return;
+    window.tdgPOSCategory=window.tdgPOSCategory||"all";
+    const box=$("tdgPOSProducts");
+    if(box&&box.parentElement&&!document.getElementById("tdgPOSProductCount")){
+      const count=document.createElement("div");
+      count.id="tdgPOSProductCount";
+      count.className="tdg-pos-product-count";
+      box.parentElement.insertBefore(count,box);
+    }
+    window.tdgPOSRefreshProducts=function(){return window.tdgRenderPOS()};
+    window.tdgRenderPOS();
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});
+  else boot();
+})();
+</script>`
+
+
+const tdgPOSHardeningPatch=String.raw`
+<style id="tdg-pos-hardening-style">
+#tdgPOSCategoryTabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+#tdgPOSCategoryTabs button{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:999px;padding:7px 14px;font:600 12px inherit;cursor:pointer}
+#tdgPOSCategoryTabs button.active{background:rgba(218,196,162,.18);border-color:rgba(218,196,162,.65)}
+#tdgPOSProducts .tdg-pos-live-card{cursor:pointer!important}
+</style>
+<script>
+(function(){
+  const CAT=[
+    ["all","All"],
+    ["men","Men"],
+    ["women","Women"],
+    ["home","Home"],
+    ["perfume","Perfume"]
+  ];
+  function norm(v){
+    v=String(v||"").trim().toLowerCase();
+    if(v==="perfumes"||v==="fragrance"||v==="fragrances")return "perfume";
+    if(v==="female"||v==="ladies")return "women";
+    return v;
+  }
+  function ensure(){
+    const box=document.getElementById("tdgPOSProducts");
+    if(!box)return;
+    let bar=document.getElementById("tdgPOSCategoryTabs");
+    if(!bar){
+      bar=document.createElement("div");
+      bar.id="tdgPOSCategoryTabs";
+      box.parentNode.insertBefore(bar,box);
+    }
+    if(bar.dataset.tdgReady!=="1"){
+      bar.innerHTML=CAT.map((c,i)=>'<button type="button" data-cat="'+c[0]+'" class="'+(i===0?"active":"")+'">'+c[1]+"</button>").join("");
+      bar.dataset.tdgReady="1";
+      bar.addEventListener("click",function(e){
+        const b=e.target.closest("button[data-cat]");if(!b)return;
+        bar.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+        window.tdgPOSCategory=b.dataset.cat;
+        if(typeof window.tdgRenderPOS==="function")window.tdgRenderPOS();
+      });
+    }
+    return box;
+  }
+  function products(){return Array.isArray(window.tdgPOSProducts)?window.tdgPOSProducts:[]}
+  function filter(cat){
+    const box=document.getElementById("tdgPOSProducts");if(!box)return;
+    const ps=products(), cards=[...box.querySelectorAll(".tdg-pos-live-card")];
+    cards.forEach((card,i)=>{
+      const id=String(card.dataset.posId||"");
+      const p=ps.find(x=>String(x.id)===id)||ps[i];
+      card.dataset.posCategory=norm(p&& (p.category||p.cat));
+      card.style.display=(cat==="all"||card.dataset.posCategory===cat)?"":"none";
+    });
+  }
+  function bind(){
+    const box=ensure();if(!box)return;
+    box.addEventListener("click",function(e){
+      const card=e.target.closest(".tdg-pos-live-card");if(!card||!box.contains(card))return;
+      e.preventDefault();e.stopPropagation();
+      const id=card.dataset.posId||"";
+      if(id && typeof window.tdgAddPOS==="function")window.tdgAddPOS(id);
+    },true);
+  }
+  function wrap(){
+    if(typeof window.tdgRenderPOS!=="function"||window.tdgRenderPOS.__tdgHardening)return;
+    const original=window.tdgRenderPOS;
+    const wrapped=async function(){
+      await original.apply(this,arguments);
+      const box=ensure();if(!box)return;
+      const ps=products(), cards=[...box.querySelectorAll(".tdg-pos-live-card")];
+      cards.forEach((card,i)=>{
+        const p=ps.find(x=>String(x.id)===String(card.dataset.posId||""))||ps[i];
+        if(p)card.dataset.posId=String(p.id);
+        card.removeAttribute("onclick");
+        card.querySelectorAll("[onclick]").forEach(x=>x.removeAttribute("onclick"));
+        card.dataset.posCategory=norm(p&&(p.category||p.cat));
+      });
+      const active=box.parentNode.querySelector("#tdgPOSCategoryTabs button.active");
+      filter(active?active.dataset.cat:"all");
+    };
+    wrapped.__tdgHardening=true;
+    window.tdgRenderPOS=wrapped;
+    bind();
+  }
+  function boot(){
+    wrap();ensure();
+    const box=document.getElementById("tdgPOSProducts");
+    if(box && !box.dataset.tdgObserver){
+      box.dataset.tdgObserver="1";
+      new MutationObserver(function(){wrap();}).observe(box,{childList:true});
+    }
+  }
+  boot();
+  document.addEventListener("DOMContentLoaded",boot);
+  setTimeout(boot,100);
+  setTimeout(boot,500);
+})();
+</script>`;
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posFixPatch+'</body>');
+}
+
+module.exports=(req,res)=>{
+  if(!isAdmin(req)){res.writeHead(302,{Location:'/'});return res.end()}
+  const html=fs.readFileSync(path.join(process.cwd(),'public','dashboard.html'),'utf8');
+  res.setHeader('Content-Type','text/html; charset=utf-8');
+  res.setHeader('Cache-Control','private, no-store');
+  res.status(200).send(injectPOSInventoryLink(html));
+};
++total.toFixed(2)+'</strong></div>';
+    };
+  }
+  function ensurePOSCartPanel(){
+    const box=document.getElementById("tdgPOSProducts");
+    if(!box||!box.parentElement||document.getElementById("tdgPOSCartPanel"))return;
+    const panel=document.createElement("div");
+    panel.id="tdgPOSCartPanel";
+    panel.className="tdg-pos-cart-panel";
+    box.parentElement.insertAdjacentElement("afterend",panel);
+    window.tdgRenderPOSCart();
+  }
   function esc(v){return htmlEscape(String(v==null?"":v))}
   function stockFor(p){
     const n=Number(p&&p.qty);
