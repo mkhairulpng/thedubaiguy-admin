@@ -497,7 +497,7 @@ img[src*="the-dubai-guy" i]{filter:brightness(0) invert(1)!important}
     if(window.tdgPOSCatalogFallback)return;
     window.tdgPOSCatalogFallback=catalog.map(function(p){return Object.assign({},p,{qty:p.soldout?0:10,images:p.imgs||[]})});
     window.tdgPOSCategory='all';
-    function imageFor(p){return typeof tdgImage==='function'?tdgImage(p):(p.imgs&&p.imgs[0]||'')}
+    function imageFor(p){try{const ids=p&&(p.images||p.imgs);const id=Array.isArray(ids)?ids[0]:'';const images=window.TDG_PRODUCT_IMAGES||{};if(id&&images[id])return images[id];if(typeof tdgImage==='function'){const value=tdgImage(p);if(value)return value}}catch(e){}return ''}
     function install(){
       const box=$('tdgPOSProducts');if(!box)return;
       if(!document.getElementById('tdgPOSCategoryTabs')){
@@ -762,7 +762,7 @@ module.exports=(req,res)=>{
 })();
 </script>`
 
-  return html.replace('</body>',kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+posFixPatch+'</body>');
+  return html.replace('</body>','<script src="/product-images.js"></script>'+kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+posFixPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
