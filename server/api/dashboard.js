@@ -854,7 +854,7 @@ module.exports=(req,res)=>{
       const badge=p.badge?'<span class="tdg-pos-live-badge">'+esc(p.badge)+'</span>':"";
       return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'">'+
         '<div class="tdg-pos-live-image">'+
-          (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display="none";this.nextElementSibling.style.display="flex"">':'')+
+          (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';">':'')+
           badge+
           '<span class="tdg-pos-image-placeholder" style="display:'+(image?"none":"flex")+'">Image unavailable</span>'+
         '</div>'+
