@@ -550,15 +550,6 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
           '<div class="tdg-pos-thumb">'+(image?'<img src="'+htmlEscape(image)+'" alt="'+htmlEscape(p.name||'Product')+'" loading="lazy" onerror="this.style.display=\\'none\\'">':'<span>No image</span>')+'</div>'+
           '<strong>'+htmlEscape(p.name||'Product')+'</strong>'+
           '<div class="price">S
-}
-
-module.exports=(req,res)=>{
-  if(!isAdmin(req)){res.writeHead(302,{Location:'/'});return res.end()}
-  const html=fs.readFileSync(path.join(process.cwd(),'public','dashboard.html'),'utf8');
-  res.setHeader('Content-Type','text/html; charset=utf-8');
-  res.setHeader('Cache-Control','private, no-store');
-  res.status(200).send(injectPOSInventoryLink(html));
-};
 +Number(p.price||0).toFixed(2)+'</div>'+
           '<div class="stock">'+(stock>0?stock+' in stock':'Sold out')+'</div></button>';
       }).join('')||'<div class="tdg-pos-category-empty">No products in this category.</div>';
