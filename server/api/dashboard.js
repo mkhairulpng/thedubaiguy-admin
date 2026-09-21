@@ -933,7 +933,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 })();
 </script>`
 
-  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+patch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+posCatalogPatch+observabilityPatch+posFixPatch+'</body>');
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posFixPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
