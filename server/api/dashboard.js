@@ -930,7 +930,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   window.tdgAddPOS=function(id){
     const p=(Array.isArray(tdgPOSProducts)?tdgPOSProducts:[]).find(function(x){return String(x.id)===String(id)});
     if(!p)return;
-    const available=stockFor(p);
+    const available=posStockFor(p);
     const cart=Array.isArray(window.tdgPOSCart)?window.tdgPOSCart:(window.tdgPOSCart=[]);
     const existing=cart.find(function(x){return String(x.id)===String(p.id)});
     const current=Number(existing&&existing.qty||0);
