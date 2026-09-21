@@ -91,36 +91,10 @@
     renderTabs(target,hits);
     apply(hits);
   }
-  async function pos(){
-    if(typeof window.tdgRenderPOS!=="function"||!document.getElementById("tdgPOSProducts"))return;
-    const original=window.tdgRenderPOS;
-    if(original.__tdgCategoryWrapped)return;
-    window.tdgRenderPOS=async function(){
-      await original();
-      const bar=document.getElementById("tdgPOSCategoryTabs");
-      if(!bar)return;
-      [...bar.querySelectorAll("button")].forEach(b=>{
-        if(!CATS.some(c=>c[0]===b.dataset.cat))b.remove();
-      });
-      if(!bar.querySelector("button[data-cat='home']")){
-        const b=document.createElement("button");b.type="button";b.dataset.cat="home";b.textContent="Home";
-        b.onclick=function(){window.tdgPOSCategory="home";bar.querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));window.tdgRenderPOS()};
-        bar.appendChild(b);
-      }
-      if(!bar.querySelector("button[data-cat='perfumes']")){
-        const b=document.createElement("button");b.type="button";b.dataset.cat="perfumes";b.textContent="Perfume";
-        b.onclick=function(){window.tdgPOSCategory="perfumes";bar.querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b));window.tdgRenderPOS()};
-        bar.appendChild(b);
-      }
-      bar.querySelectorAll("button").forEach(b=>b.style.cursor="pointer");
-    };
-    window.tdgRenderPOS.__tdgCategoryWrapped=true;
-  }
   async function boot(){
     await loadProducts();
     await productsPage();
-    await pos();
   }
   boot();
-  new MutationObserver(function(){productsPage();pos()}).observe(document.documentElement,{subtree:true,childList:true});
+  new MutationObserver(function(){productsPage()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
