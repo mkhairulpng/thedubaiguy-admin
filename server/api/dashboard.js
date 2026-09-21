@@ -971,7 +971,8 @@ const tdgPOSHardeningPatch=String.raw\`
       bar.addEventListener("click",function(e){
         const b=e.target.closest("button[data-cat]");if(!b)return;
         bar.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
-        filter(b.dataset.cat);
+        window.tdgPOSCategory=b.dataset.cat;
+        if(typeof window.tdgRenderPOS==="function")window.tdgRenderPOS();
       });
     }
     return box;
