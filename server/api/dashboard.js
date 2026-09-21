@@ -1004,7 +1004,54 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 
 
 
-  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posFixPatch+'</body>');
+  const posRefundTopPatch=String.raw\`
+<style id="tdg-pos-top-refund-style">
+.tdg-pos-top-actions{display:inline-flex!important;align-items:center!important;gap:8px!important}
+.tdg-pos-top-refund{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  border:1px solid rgba(220,120,120,.35)!important;
+  border-radius:7px!important;background:rgba(190,90,90,.12)!important;
+  color:var(--text)!important;padding:7px 12px!important;font-size:10px!important;
+  font-weight:600!important;cursor:pointer!important
+}
+.tdg-pos-top-refund:hover{background:rgba(190,90,90,.2)!important}
+</style>
+<script>
+(function(){
+  function addTopRefund(){
+    const buttons=[...document.querySelectorAll('button,a,[role="button"]')];
+    const newSale=buttons.find(function(el){
+      return /^\\s*New Sale\\s*$/i.test((el.textContent||'').trim());
+    });
+    if(!newSale)return;
+    if(document.getElementById('tdgPOSTopRefund'))return;
+    const refund=document.createElement('button');
+    refund.type='button';
+    refund.id='tdgPOSTopRefund';
+    refund.className='tdg-pos-top-refund';
+    refund.textContent='Refund';
+    refund.title='Open POS transactions and refunds';
+    refund.addEventListener('click',function(){
+      const panel=document.getElementById('tdgPOSTransactionsPanel');
+      if(typeof window.ensureTransactionPanel==='function')window.ensureTransactionPanel();
+      const target=document.getElementById('tdgPOSTransactionsPanel');
+      if(target){
+        target.scrollIntoView({behavior:'smooth',block:'start'});
+        if(typeof window.tdgPOSLoadTransactions==='function')window.tdgPOSLoadTransactions();
+      }
+    });
+    const wrap=document.createElement('span');
+    wrap.className='tdg-pos-top-actions';
+    newSale.parentNode.insertBefore(wrap,newSale);
+    wrap.appendChild(newSale);
+    wrap.appendChild(refund);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addTopRefund,{once:true});
+  else addTopRefund();
+  new MutationObserver(function(){addTopRefund()}).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>`;
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
