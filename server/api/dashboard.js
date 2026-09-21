@@ -705,6 +705,8 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   background:rgba(255,255,255,.035)!important;
   color:var(--text)!important
 }
+.tdg-pos-live-card{cursor:pointer!important}
+.tdg-pos-live-card:focus-visible{outline:1px solid rgba(218,196,162,.9)!important;outline-offset:2px}
 .tdg-pos-live-card:hover{
   border-color:rgba(255,255,255,.25)!important;
   background:rgba(255,255,255,.055)!important;
@@ -843,7 +845,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
       const stock=stockFor(p),sold=stock<=0,image=imageSrcFor(p);
       const id=JSON.stringify(String(p.id)).replace(/</g,"\\\\u003c");
       const badge=p.badge?'<span class="tdg-pos-live-badge">'+esc(p.badge)+'</span>':"";
-      return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'">'+
+      return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'" onclick="tdgAddPOS('+id+')" role="button" tabindex="'+(sold?"-1":"0")+'"'+(sold?' aria-disabled="true"':'')+'>'+
         '<div class="tdg-pos-live-image">'+
           (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';">':'')+
           badge+
@@ -854,7 +856,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
           '<div class="tdg-pos-live-price">S$'+Number(p.price||0).toFixed(2)+'</div>'+
           '<div class="tdg-pos-live-stock '+(sold?"tdg-pos-sold-label":"tdg-pos-in-stock")+'">'+(sold?"0 in stock":stock+" in stock")+'</div>'+
         '</div>'+
-        '<button type="button" class="tdg-pos-live-add" '+(sold?"disabled":"")+' onclick="tdgAddPOS('+id+')">'+(sold?"Sold Out":"+ Add")+'</button>'+
+        '<button type="button" class="tdg-pos-live-add" '+(sold?"disabled":"")+' onclick="event.stopPropagation();tdgAddPOS('+id+')">'+(sold?"Sold Out":"+ Add")+'</button>'+
       '</div>';
     }).join("")||'<div class="tdg-pos-category-empty">No products in this category.</div>';
 
