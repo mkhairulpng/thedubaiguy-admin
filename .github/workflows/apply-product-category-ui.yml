@@ -1,0 +1,32 @@
+name: Apply product category UI patch
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add live product category script to dashboard
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("server/api/dashboard.js")
+          s=p.read_text()
+          old='<script src="/product-images.js"></script>'
+          new=old+'<script src="/product-categories.js"></script>'
+          if new not in s:
+              if old not in s:
+                  raise SystemExit("dashboard injection marker not found")
+              p.write_text(s.replace(old,new,1))
+              import subprocess
+              subprocess.run(["git","config","user.name","github-actions[bot]"],check=True)
+              subprocess.run(["git","config","user.email","41898282+github-actions[bot]@users.noreply.github.com"],check=True)
+              subprocess.run(["git","add","server/api/dashboard.js"],check=True)
+              subprocess.run(["git","commit","-m","Add live product category UI"],check=True)
+              subprocess.run(["git","push"],check=True)
+          else:
+              print("Patch already applied")
