@@ -778,7 +778,21 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   if(!window.tdgPOSSelectedPayment)window.tdgPOSSelectedPayment="NETS";
   if(typeof window.tdgRenderPOSCart!=="function"){
     window.tdgRenderPOSCart=function(){
-      const host=document.getElementById("tdgPOSCartPanel");
+      let host=document.getElementById("tdgPOSCurrentSaleItems");
+      if(!host){
+        const candidates=Array.from(document.querySelectorAll("section,aside,article,div"));
+        const hit=candidates.find(function(el){
+          const t=String(el.innerText||"").replace(/\\s+/g," ").trim().toUpperCase();
+          return t==="CURRENT SALE" || (t.indexOf("CURRENT SALE")>=0 && el.children.length>=2 && t.length<500);
+        });
+        if(hit){
+          host=document.createElement("div");
+          host.id="tdgPOSCurrentSaleItems";
+          host.className="tdg-pos-current-sale-items";
+          hit.appendChild(host);
+        }
+      }
+      if(!host)host=document.getElementById("tdgPOSCartPanel");
       if(!host)return;
       const cart=Array.isArray(window.tdgPOSCart)?window.tdgPOSCart:[];
       if(!cart.length){
@@ -786,12 +800,14 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
         return;
       }
       const total=cart.reduce(function(n,p){return n+Number(p.price||0)*Number(p.qty||1)},0);
-      host.innerHTML='<div class="tdg-pos-cart-title">CART · '+cart.reduce(function(n,p){return n+Number(p.qty||0)},0)+' ITEMS</div>'+
+      const qty=cart.reduce(function(n,p){return n+Number(p.qty||0)},0);
+      host.innerHTML='<div class="tdg-pos-cart-title">CURRENT SALE · '+qty+' ITEMS</div>'+
         cart.map(function(p){
-          const qty=Math.max(1,Number(p.qty||1));
-          return '<div class="tdg-pos-cart-row"><span>'+htmlEscape(p.name||"Product")+' × '+qty+'</span><strong>S
-    const n=Number(p&&p.qty);
-    return Number.isFinite(n)?Math.max(0,n):(p&&p.soldout?0:1);
+          const q=Math.max(1,Number(p.qty||1));
+          return '<div class="tdg-pos-cart-row"><span>'+htmlEscape(p.name||"Product")+' × '+q+'</span><strong>S$'+(Number(p.price||0)*q).toFixed(2)+'</strong></div>';
+        }).join("")+
+        '<div class="tdg-pos-cart-total"><span>Total</span><strong>S$'+total.toFixed(2)+'</strong></div>';
+    };
   }
   function imageKeyFor(p){
     const a=p&&(Array.isArray(p.images)?p.images:(Array.isArray(p.imgs)?p.imgs:[]));
