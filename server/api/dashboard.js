@@ -768,6 +768,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 @media(max-width:1180px){#tdgPOSProducts.tdg-pos-live-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:820px){#tdgPOSProducts.tdg-pos-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:520px){#tdgPOSProducts.tdg-pos-live-grid{grid-template-columns:1fr!important}}
+.tdg-pos-transactions-panel{margin-top:18px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:rgba(255,255,255,.025)!important;overflow:hidden!important}.tdg-pos-transactions-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:13px 14px!important;border-bottom:1px solid var(--line)!important}.tdg-pos-transactions-title{font-size:11px!important;font-weight:700!important;letter-spacing:.12em!important}.tdg-pos-transactions-sub{font-size:9px!important;color:var(--muted)!important;margin-top:3px!important}.tdg-pos-transactions-refresh,.tdg-pos-refund{border:1px solid var(--line)!important;border-radius:7px!important;background:rgba(255,255,255,.05)!important;color:var(--text)!important;padding:7px 10px!important;font-size:10px!important;cursor:pointer!important}.tdg-pos-refund{background:rgba(190,90,90,.12)!important;border-color:rgba(220,120,120,.25)!important}.tdg-pos-transactions-table-wrap{overflow:auto!important}.tdg-pos-transactions-table{width:100%!important;border-collapse:collapse!important;min-width:900px!important;font-size:9px!important}.tdg-pos-transactions-table th,.tdg-pos-transactions-table td{padding:8px 10px!important;border-bottom:1px solid rgba(255,255,255,.06)!important;text-align:left!important;white-space:nowrap!important}.tdg-pos-transactions-table th{font-size:8px!important;color:var(--muted)!important;text-transform:uppercase!important;letter-spacing:.06em!important}.tdg-pos-tx-status.paid{color:#8ee6a8!important}.tdg-pos-tx-status.refunded,.tdg-pos-refunded{color:#ff9b9b!important}.tdg-pos-tx-error{color:#ff9b9b!important}
 </style>
 <script>
 (function(){
@@ -844,8 +845,9 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
     box.innerHTML=rows.map(function(p){
       const stock=stockFor(p),sold=stock<=0,image=imageSrcFor(p);
       const id=JSON.stringify(String(p.id)).replace(/</g,"\\\\u003c");
+      const safeId=esc(String(p.id));
       const badge=p.badge?'<span class="tdg-pos-live-badge">'+esc(p.badge)+'</span>':"";
-      return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'" onclick="tdgAddPOS('+id+')" role="button" tabindex="'+(sold?"-1":"0")+'"'+(sold?' aria-disabled="true"':'')+'>'+
+      return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'" data-pos-id="'+safeId+'" onclick="tdgAddPOS(this.dataset.id)" role="button" tabindex="'+(sold?"-1":"0")+'"'+(sold?' aria-disabled="true"':'')+'>'+
         '<div class="tdg-pos-live-image">'+
           (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';">':'')+
           badge+
@@ -856,7 +858,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
           '<div class="tdg-pos-live-price">S$'+Number(p.price||0).toFixed(2)+'</div>'+
           '<div class="tdg-pos-live-stock '+(sold?"tdg-pos-sold-label":"tdg-pos-in-stock")+'">'+(sold?"0 in stock":stock+" in stock")+'</div>'+
         '</div>'+
-        '<button type="button" class="tdg-pos-live-add" '+(sold?"disabled":"")+' onclick="event.stopPropagation();tdgAddPOS('+id+')">'+(sold?"Sold Out":"+ Add")+'</button>'+
+        '<button type="button" class="tdg-pos-live-add" '+(sold?"disabled":"")+' onclick="event.stopPropagation();tdgAddPOS(this.closest('.tdg-pos-live-card').dataset.id)">'+(sold?"Sold Out":"+ Add")+'</button>'+
       '</div>';
     }).join("")||'<div class="tdg-pos-category-empty">No products in this category.</div>';
 
@@ -873,6 +875,44 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
     if(current+1>available){alert("Not enough stock for "+(p.name||"this product")+". Only "+available+" available.");return}
     if(existing)existing.qty=current+1;else tdgPOSCart.push(Object.assign({},p,{qty:1}));
     if(typeof tdgRenderPOSCart==="function")tdgRenderPOSCart();
+  };
+
+
+  function ensureTransactionPanel(){
+    if(document.getElementById("tdgPOSTransactionsPanel"))return;
+    const box=$("tdgPOSProducts"); if(!box||!box.parentElement)return;
+    const panel=document.createElement("section");
+    panel.id="tdgPOSTransactionsPanel";
+    panel.className="tdg-pos-transactions-panel";
+    panel.innerHTML='<div class="tdg-pos-transactions-head"><div><div class="tdg-pos-transactions-title">TRANSACTIONS</div><div class="tdg-pos-transactions-sub">Cashier POS sales and refunds</div></div><button type="button" class="tdg-pos-transactions-refresh" onclick="tdgPOSLoadTransactions()">Refresh</button></div><div class="tdg-pos-transactions-table-wrap"><table class="tdg-pos-transactions-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Payment</th><th>Total</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="tdgPOSTransactionsBody"><tr><td colspan="8">Loading transactions…</td></tr></tbody></table></div>';
+    box.parentElement.insertAdjacentElement("afterend",panel);
+    tdgPOSLoadTransactions();
+  }
+  window.tdgPOSLoadTransactions=async function(){
+    const body=document.getElementById("tdgPOSTransactionsBody"); if(!body)return;
+    body.innerHTML='<tr><td colspan="8">Loading transactions…</td></tr>';
+    try{
+      const d=await tdgJSON("/api/orders");
+      const rows=Array.isArray(d&&d.data)?d.data:[];
+      const pos=rows.filter(function(o){return String(o.delivery_method||"").toUpperCase()==="POS";}).slice(0,100);
+      body.innerHTML=pos.length?pos.map(function(o){
+        const items=Array.isArray(o.items)?o.items:[];
+        const qty=items.reduce(function(n,i){return n+Number(i.qty||0)},0);
+        const refunded=String(o.status||"").toUpperCase()==="REFUNDED"||String(o.payment_status||"").toUpperCase()==="REFUNDED";
+        const date=o.created_at?new Date(o.created_at).toLocaleString():"—";
+        return '<tr><td><strong>'+esc(o.order_number||"—")+'</strong></td><td>'+esc(o.customer_name||"—")+'</td><td>'+qty+'</td><td>'+esc(o.payment_method||"—")+'</td><td>S$'+Number(o.total||0).toFixed(2)+'</td><td><span class="tdg-pos-tx-status '+(refunded?"refunded":"paid")+'">'+esc(o.status||o.payment_status||"—")+'</span></td><td>'+esc(date)+'</td><td>'+(refunded?'<span class="tdg-pos-refunded">Refunded</span>':'<button type="button" class="tdg-pos-refund" onclick="tdgPOSRefund(this.dataset.order)" data-order="'+esc(o.order_number||"")+'">Refund</button>')+'</td></tr>';
+      }).join(""):'<tr><td colspan="8">No POS transactions yet.</td></tr>';
+    }catch(e){body.innerHTML='<tr><td colspan="8" class="tdg-pos-tx-error">'+esc(e.message||"Could not load transactions")+'</td></tr>';}
+  };
+  window.tdgPOSRefund=async function(orderNumber){
+    if(!orderNumber)return;
+    if(!confirm("Refund transaction "+orderNumber+"? The stock will be returned to inventory."))return;
+    try{
+      const d=await tdgJSON("/api/pos-refund",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order_number:String(orderNumber)})});
+      alert("Refund completed: "+String(d&&d.data&&d.data.order_number||orderNumber)+" · S$"+Number(d&&d.data&&d.data.refund_total||0).toFixed(2));
+      await tdgPOSLoadTransactions();
+      await tdgRenderPOS();
+    }catch(e){alert("Refund failed: "+e.message);}
   };
 
   function boot(){
