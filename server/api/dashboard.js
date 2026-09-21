@@ -934,7 +934,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 </script>`
 
 
-const tdgPOSHardeningPatch=String.raw\`
+const tdgPOSHardeningPatch=String.raw`
 <style id="tdg-pos-hardening-style">
 #tdgPOSCategoryTabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
 #tdgPOSCategoryTabs button{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);border-radius:999px;padding:7px 14px;font:600 12px inherit;cursor:pointer}
@@ -1031,7 +1031,7 @@ const tdgPOSHardeningPatch=String.raw\`
   setTimeout(boot,100);
   setTimeout(boot,500);
 })();
-</script>\`;
+</script>`;
   return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posFixPatch+tdgPOSHardeningPatch+'</body>');
 }
 
