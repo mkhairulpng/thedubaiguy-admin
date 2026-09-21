@@ -88,6 +88,16 @@ async function ensureSchema() {
       );
       CREATE INDEX IF NOT EXISTS orders_created_idx ON orders (created_at DESC);
       CREATE INDEX IF NOT EXISTS orders_customer_idx ON orders (customer_id);
+      CREATE TABLE IF NOT EXISTS pos_refunds (
+        id UUID PRIMARY KEY,
+        order_id UUID NOT NULL REFERENCES orders(id),
+        order_number TEXT NOT NULL,
+        amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        reason TEXT,
+        payment_method TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS pos_refunds_order_idx ON pos_refunds(order_id);
       CREATE TABLE IF NOT EXISTS aura_transactions (
         id UUID PRIMARY KEY,
         customer_id UUID NOT NULL REFERENCES customers(id),
