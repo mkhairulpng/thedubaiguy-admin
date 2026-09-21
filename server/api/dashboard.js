@@ -1004,7 +1004,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 
 
 
-  const posRefundTopPatch=String.raw\`
+  const posRefundTopPatch=String.raw`
 <style id="tdg-pos-top-refund-style">
 .tdg-pos-top-actions{display:inline-flex!important;align-items:center!important;gap:8px!important}
 .tdg-pos-top-refund{
