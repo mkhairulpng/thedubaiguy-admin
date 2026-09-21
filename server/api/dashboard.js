@@ -688,10 +688,14 @@ module.exports=(req,res)=>{
   async function loadImages(products){
     const ids=[...new Set(products.map(imageKeyFor).filter(Boolean))];
     if(!ids.length){window.tdgPOSImageMap={};return}
-    try{
-      const d=await tdgJSON("/api/product-images?ids="+encodeURIComponent(ids.join(",")));
-      window.tdgPOSImageMap=(d&&d.data)||{};
-    }catch(e){window.tdgPOSImageMap={}}
+    const map={};
+    await Promise.all(ids.map(async function(id){
+      try{
+        const r=await fetch("/api/product-image?id="+encodeURIComponent(String(id)),{credentials:"same-origin",cache:"force-cache"});
+        if(r.ok)map[id]="/api/product-image?id="+encodeURIComponent(String(id));
+      }catch(e){}
+    }));
+    window.tdgPOSImageMap=map;
   }
   function boot(){
     if(!$("tdgPOSProducts"))return;
