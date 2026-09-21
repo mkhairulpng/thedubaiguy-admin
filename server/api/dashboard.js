@@ -797,7 +797,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
       tabs=document.createElement("div");
       tabs.id="tdgPOSCategoryTabs";
       tabs.className="tdg-pos-category-tabs";
-      [["all","All"],["women","Women"],["men","Men"],["perfume","Perfume"],["home","Home"],["accessories","Accessories"],["clearance","Clearance"]].forEach(function(c){
+      [["all","All"],["men","Men"],["women","Women"],["home","Home"],["perfumes","Perfume"]].forEach(function(c){
         const b=document.createElement("button");
         b.type="button";b.dataset.cat=c[0];b.textContent=c[1];
         b.addEventListener("click",function(){
@@ -834,7 +834,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
     const cat=window.tdgPOSCategory||"all";
     const rows=tdgPOSProducts.filter(function(p){
       const pc=categoryFor(p);
-      const categoryMatch=cat==="all"||pc===cat||(cat==="perfume"&&pc==="perfumes");
+      const categoryMatch=cat==="all"||pc===cat||(cat==="perfume"&&pc==="perfumes")||(cat==="perfumes"&&pc==="perfume");
       const queryMatch=!q||String(p.name||"").toLowerCase().includes(q)||String(p.id||"").toLowerCase().includes(q);
       return categoryMatch&&queryMatch;
     }).slice(0,100);
@@ -1032,7 +1032,7 @@ const tdgPOSHardeningPatch=String.raw`
   setTimeout(boot,500);
 })();
 </script>`;
-  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posFixPatch+tdgPOSHardeningPatch+'</body>');
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posFixPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
