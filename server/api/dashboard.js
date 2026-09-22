@@ -1067,7 +1067,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 })();
 </script>`;
 
-  const posReliabilityPatch=String.raw\`
+  const posReliabilityPatch=String.raw`
 <style id="tdg-pos-reliability">
 .tdg-pos-payment-active{outline:2px solid rgba(218,196,162,.9)!important;box-shadow:0 0 0 2px rgba(218,196,162,.12) inset!important}
 .tdg-pos-payment-disabled{opacity:.55!important}
@@ -1125,9 +1125,9 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   new MutationObserver(boot).observe(document.documentElement,{subtree:true,childList:true});
 })();
-</script>\`;
+</script>`;
 
-  const auraReliabilityPatch=String.raw\`
+  const auraReliabilityPatch=String.raw`
 <style id="tdg-aura-reliability">
 .tdg-aura-add-button{margin-left:6px!important}
 .tdg-aura-membership-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
@@ -1180,7 +1180,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
   new MutationObserver(bind).observe(document.documentElement,{subtree:true,childList:true});
 })();
-</script>\`;
+</script>`;
 
   return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+adminOperationsPatch+posReliabilityPatch+auraReliabilityPatch+'</body>');
 }
