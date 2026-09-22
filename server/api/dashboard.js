@@ -890,7 +890,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
       const badge=p.badge?'<span class="tdg-pos-live-badge">'+posEsc(p.badge)+'</span>':"";
       return '<div class="tdg-pos-live-card'+(sold?" tdg-pos-soldout":"")+'" data-pos-id="'+safeId+'" role="button" tabindex="'+(sold?"-1":"0")+'"'+(sold?' aria-disabled="true"':'')+'>'+
         '<div class="tdg-pos-live-image">'+
-          (image?'<img src="'+posEsc(image)+'" alt="'+posEsc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';">':'')+
+          (image?'<img src="'+posEsc(image)+'" alt="'+posEsc(p.name||"Product")+'" loading="lazy" onerror="this.onerror=null;this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\';">':'')+
           badge+
           '<span class="tdg-pos-image-placeholder" style="display:'+(image?"none":"flex")+'">Image unavailable</span>'+
         '</div>'+
@@ -986,7 +986,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
     if(!box)return false;
     if(tdgPOSBooting)return true;
     tdgPOSBooting=true;
-    ensurePOSCartPanel();
+    if(typeof window.tdgRenderPOSCart==="function")window.tdgRenderPOSCart();
     window.tdgPOSCategory=window.tdgPOSCategory||"all";
     bindPOSProductClicks(box);
     if(box.parentElement&&!document.getElementById("tdgPOSProductCount")){
