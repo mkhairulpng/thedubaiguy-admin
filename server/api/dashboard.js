@@ -70,14 +70,14 @@ function injectPOSInventoryLink(html){
             membership_id:membership,
             aura_membership:aura,
             items:tdgPOSCart.map(p=>({id:String(p.id),qty:Number(p.qty||1),size:'',color:''})),
-            payment_method:tdgPOSSelectedPayment,
+            payment_method:window.tdgPOSSelectedPayment,
             total
           })
         });
         alert('Sale completed: '+String(d?.data?.order_number||'Created')+' · S$'+Number(d?.data?.total||total).toFixed(2)+' · '+tdgPOSSelectedPayment);
         tdgPOSCart=[];
         ['tdgPOSCustomer','tdgPOSMobile','tdgPOSMembership','tdgPOSAura'].forEach(id=>{if($(id))$(id).value='';});
-        tdgPOSPayment('NETS');
+        window.tdgPOSPayment('NETS');
         tdgPOSProducts=[];
         await tdgRenderPOS();
       }catch(e){alert('POS sale could not be completed: '+e.message);}
@@ -1066,7 +1066,123 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   new MutationObserver(function(){addTopRefund()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+adminOperationsPatch+'</body>');
+
+  const posReliabilityPatch=String.raw\`
+<style id="tdg-pos-reliability">
+.tdg-pos-payment-active{outline:2px solid rgba(218,196,162,.9)!important;box-shadow:0 0 0 2px rgba(218,196,162,.12) inset!important}
+.tdg-pos-payment-disabled{opacity:.55!important}
+.tdg-aura-add-button{margin-left:6px!important}
+</style>
+<script>
+(function(){
+  function posRoot(){
+    const p=document.getElementById('tdgPOSProducts');
+    return p ? (p.closest('section,main,div')||document.body) : document.body;
+  }
+  window.tdgPOSSelectedPayment=window.tdgPOSSelectedPayment||'NETS';
+  window.tdgPOSPayment=function(method){
+    const m=String(method||'').toUpperCase();
+    if(!['NETS','PAYNOW','STRIPE'].includes(m))return;
+    window.tdgPOSSelectedPayment=m;
+    const root=posRoot();
+    root.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]').forEach(function(el){
+      const t=(el.textContent||el.value||'').trim().toUpperCase();
+      if(t===m || t.indexOf(m+' ')===0 || t.indexOf(' '+m)===0)el.classList.add('tdg-pos-payment-active');
+      else if(/^(NETS|PAYNOW|STRIPE)$/.test(t))el.classList.remove('tdg-pos-payment-active');
+    });
+  };
+
+  function bindPaymentButtons(){
+    const root=posRoot();
+    root.querySelectorAll('button,[role="button"],input[type="button"],input[type="submit"]').forEach(function(el){
+      if(el.dataset.tdgPaymentBound)return;
+      const t=(el.textContent||el.value||'').trim().toUpperCase();
+      if(!['NETS','PAYNOW','STRIPE'].includes(t))return;
+      el.dataset.tdgPaymentBound='1';
+      el.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.tdgPOSPayment(t)});
+    });
+    window.tdgPOSPayment(window.tdgPOSSelectedPayment);
+  }
+
+  function bindCheckout(){
+    const root=posRoot();
+    root.querySelectorAll('button,[role="button"]').forEach(function(el){
+      if(el.dataset.tdgCheckoutBound)return;
+      const t=(el.textContent||'').trim().toUpperCase();
+      if(!/^(CHECKOUT|COMPLETE SALE|CHARGE|PAY NOW)$/.test(t))return;
+      el.dataset.tdgCheckoutBound='1';
+      el.addEventListener('click',function(e){
+        e.preventDefault();e.stopPropagation();
+        if(typeof window.tdgPOSCheckout==='function')window.tdgPOSCheckout();
+      });
+    });
+  }
+
+  function boot(){
+    bindPaymentButtons();
+    bindCheckout();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  new MutationObserver(boot).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>\`;
+
+  const auraReliabilityPatch=String.raw\`
+<style id="tdg-aura-reliability">
+.tdg-aura-add-button{margin-left:6px!important}
+.tdg-aura-membership-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+</style>
+<script>
+(function(){
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+  function openAuraAdd(){
+    var old=document.getElementById('tdgAuraDirectAdd');if(old)old.remove();
+    var m=document.createElement('div');m.id='tdgAuraDirectAdd';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML='<div style="width:min(620px,96vw);background:#211c18;border:1px solid var(--line);border-radius:16px;padding:22px;color:var(--text)">'+
+      '<h3 style="margin:0 0 16px">ADD AURA MEMBERSHIP</h3>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+      '<input id="da-name" placeholder="Customer name *">'+
+      '<input id="da-mobile" placeholder="Mobile number *">'+
+      '<input id="da-email" placeholder="Customer email">'+
+      '<input id="da-balance" type="number" min="0" step=".01" value="0" placeholder="Aura balance">'+
+      '<input id="da-notes" style="grid-column:1/-1" placeholder="Notes">'+
+      '</div>'+
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button id="da-cancel" type="button">Cancel</button><button id="da-save" type="button">Create AURA Membership</button></div>'+
+      '<div id="da-result" style="margin-top:12px"></div></div>';
+    document.body.appendChild(m);
+    m.querySelector('#da-cancel').onclick=function(){m.remove()};
+    m.querySelector('#da-save').onclick=async function(){
+      var name=m.querySelector('#da-name').value.trim(),mobile=m.querySelector('#da-mobile').value.trim();
+      if(!name||!mobile){alert('Customer name and mobile number are required.');return}
+      var b=this; b.disabled=true;
+      try{
+        var d=await tdgJSON('/api/aura',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          name:name,email:m.querySelector('#da-email').value.trim(),mobile:mobile,balance:Number(m.querySelector('#da-balance').value||0),
+          membership_type:'AURA',status:'ACTIVE',notes:m.querySelector('#da-notes').value.trim()
+        })});
+        var x=d&&d.data;
+        m.querySelector('#da-result').innerHTML='<div style="padding:12px;border:1px solid var(--line);border-radius:10px">AURA Membership created<br><strong class="tdg-aura-membership-id">'+esc(x&&x.card_number||'')+'</strong></div>';
+        b.textContent='Done'; b.disabled=true;
+      }catch(e){b.disabled=false;alert(e.message||'Could not create AURA membership')}
+    };
+  }
+  function bind(){
+    document.querySelectorAll('button,a,[role="button"]').forEach(function(n){
+      if(n.dataset.tdgAuraDirect)return;
+      var t=(n.textContent||'').trim().toLowerCase();
+      if(!/^(aura|aura membership)$/.test(t))return;
+      n.dataset.tdgAuraDirect='1';
+      var b=document.createElement('button');b.type='button';b.className='tdg-aura-add-button';b.textContent='+ Add';
+      b.onclick=function(e){e.preventDefault();e.stopPropagation();openAuraAdd()};
+      n.insertAdjacentElement('afterend',b);
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+  new MutationObserver(bind).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>\`;
+
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+adminOperationsPatch+posReliabilityPatch+auraReliabilityPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
