@@ -107,6 +107,23 @@ async function ensureSchema() {
         note TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      CREATE TABLE IF NOT EXISTS aura_giftcards (
+        id UUID PRIMARY KEY,
+        card_number TEXT UNIQUE NOT NULL,
+        customer_id UUID REFERENCES customers(id),
+        customer_name TEXT NOT NULL,
+        customer_email TEXT,
+        customer_mobile TEXT,
+        balance NUMERIC(12,2) NOT NULL DEFAULT 0,
+        initial_balance NUMERIC(12,2) NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'ACTIVE',
+        membership_type TEXT NOT NULL DEFAULT 'AURA',
+        notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS aura_giftcards_customer_idx ON aura_giftcards(customer_id);
+      CREATE INDEX IF NOT EXISTS aura_giftcards_email_idx ON aura_giftcards((LOWER(customer_email)));
       CREATE TABLE IF NOT EXISTS stripe_events (
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
