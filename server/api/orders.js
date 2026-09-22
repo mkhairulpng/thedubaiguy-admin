@@ -17,7 +17,8 @@ module.exports=async function handler(req,res){
       const r=await db.query(`SELECT * FROM orders ORDER BY created_at DESC LIMIT 200`); return json(res,200,{ok:true,data:r.rows});
     }
     if(method(req)==='POST'){
-      const b=req.body||{}; const items=(Array.isArray(b.items)?b.items:[]).map(cleanItem).filter(x=>x.id);
+      const b=req.body||{}; if(b.manual && !requireAdmin(req,res)) return;
+      const items=(Array.isArray(b.items)?b.items:[]).map(cleanItem).filter(x=>x.id);
       if(!b.customer?.name || !items.length) return json(res,400,{error:'Customer name and at least one item are required'});
       const ids=[...new Set(items.map(i=>i.id))]; const pr=await db.query(`SELECT * FROM products WHERE id=ANY($1::text[]) AND active=TRUE`,[ids]);
       if(pr.rows.length!==ids.length) return json(res,400,{error:'One or more products are unavailable'});
@@ -28,8 +29,13 @@ module.exports=async function handler(req,res){
       const customerId=existing.rowCount?existing.rows[0].id:crypto.randomUUID();
       if(!existing.rowCount) await db.query(`INSERT INTO customers(id,name,email,mobile,address,postal,country) VALUES($1,$2,$3,$4,$5,$6,$7)`,[customerId,c.name,c.email||null,c.mobile||null,c.address||null,c.postal||null,c.country||'Singapore']);
       const id=crypto.randomUUID(), num=orderNumber();
-      await db.query(`INSERT INTO orders(id,order_number,status,payment_status,customer_id,customer_name,customer_email,customer_mobile,address,postal,country,subtotal,shipping,total,payment_method,delivery_method,items) VALUES($1,$2,'PENDING_PAYMENT','PENDING',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb)`,[id,num,customerId,c.name,c.email||null,c.mobile||null,c.address||null,c.postal||null,c.country||'Singapore',subtotal,shipping,total,b.payment_method||null,b.delivery_method||null,JSON.stringify(priced)]);
-      return json(res,201,{ok:true,data:{id,order_number:num,subtotal,shipping,total,currency:'SGD',items:priced}});
+      const manual=Boolean(b.manual);
+      await db.query(`INSERT INTO orders(id,order_number,status,payment_status,customer_id,customer_name,customer_email,customer_mobile,address,postal,country,subtotal,shipping,total,payment_method,delivery_method,items,paid_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb,$18)`,[id,num,manual?'PAID':'PENDING_PAYMENT',manual?'PAID':'PENDING',customerId,c.name,c.email||null,c.mobile||null,c.address||null,c.postal||null,c.country||'Singapore',subtotal,shipping,total,b.payment_method||null,b.delivery_method||null,JSON.stringify(priced),manual?new Date():null]);
+      if(manual){
+        for(const i of items) await db.query(`UPDATE products SET qty=GREATEST(0,qty-$1),soldout=(qty-$1)<=0,updated_at=NOW() WHERE id=$2`,[i.qty,i.id]);
+        await db.query(`UPDATE customers SET total_spend=total_spend+$1,order_count=order_count+1,updated_at=NOW() WHERE id=$2`,[total,customerId]);
+      }
+      return json(res,201,{ok:true,data:{id,order_number:num,subtotal,shipping,total,currency:'SGD',items:priced,payment_status:manual?'PAID':'PENDING'}});
     }
     if(method(req)==='PATCH'){
       if(!requireAdmin(req,res)) return; const b=req.body||{}; if(!b.order_number) return json(res,400,{error:'order_number is required'});
