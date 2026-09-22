@@ -942,6 +942,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   };
 
 
+  window.tdgPOSEnsureTransactions=ensureTransactionPanel;
   function ensureTransactionPanel(){
     if(document.getElementById("tdgPOSTransactionsPanel"))return;
     const box=$("tdgPOSProducts"); if(!box||!box.parentElement)return;
@@ -1065,7 +1066,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   new MutationObserver(function(){addTopRefund()}).observe(document.documentElement,{subtree:true,childList:true});
 })();
 </script>`;
-  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+'</body>');
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+adminOperationsPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
