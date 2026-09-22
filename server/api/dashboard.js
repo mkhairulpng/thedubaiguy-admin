@@ -1183,7 +1183,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 </script>`;
 
 
-  const finalReliabilityPatch=String.raw\`
+  const finalReliabilityPatch=String.raw`
 <style id="tdg-final-pos-aura">
 .tdg-pos-live-card{position:relative!important;cursor:pointer!important;pointer-events:auto!important}
 .tdg-pos-live-add{position:relative!important;z-index:5!important;pointer-events:auto!important;cursor:pointer!important}
@@ -1372,7 +1372,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
   bindAuraManage();
   new MutationObserver(bindAuraManage).observe(document.documentElement,{subtree:true,childList:true});
 })();
-</script>\`;
+</script>`;
   return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+adminOperationsPatch+posReliabilityPatch+auraReliabilityPatch+finalReliabilityPatch+'</body>');
 }
 
