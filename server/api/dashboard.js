@@ -979,13 +979,16 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
     }catch(e){alert("Refund failed: "+e.message);}
   };
 
+  let tdgPOSBooting=false;
   function boot(){
-    if(!$("tdgPOSProducts"))return;
+    const box=$("tdgPOSProducts");
+    if(!box)return false;
+    if(tdgPOSBooting)return true;
+    tdgPOSBooting=true;
     ensurePOSCartPanel();
     window.tdgPOSCategory=window.tdgPOSCategory||"all";
-    const box=$("tdgPOSProducts");
     bindPOSProductClicks(box);
-    if(box&&box.parentElement&&!document.getElementById("tdgPOSProductCount")){
+    if(box.parentElement&&!document.getElementById("tdgPOSProductCount")){
       const count=document.createElement("div");
       count.id="tdgPOSProductCount";
       count.className="tdg-pos-product-count";
@@ -993,10 +996,20 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
     }
     window.tdgPOSRefreshProducts=function(){return window.tdgRenderPOS()};
     ensureTransactionPanel();
-    window.tdgRenderPOS();
+    Promise.resolve(window.tdgRenderPOS()).finally(function(){tdgPOSBooting=false});
+    return true;
   }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});
-  else boot();
+  function watchForPOS(){
+    if(boot())return;
+    const observer=new MutationObserver(function(){
+      if(boot()){
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.documentElement,{subtree:true,childList:true});
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",watchForPOS,{once:true});
+  else watchForPOS();
 })();
 </script>`
 
