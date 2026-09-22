@@ -1048,7 +1048,7 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
     refund.title='Open POS transactions and refunds';
     refund.addEventListener('click',function(){
       const panel=document.getElementById('tdgPOSTransactionsPanel');
-      if(typeof window.ensureTransactionPanel==='function')window.ensureTransactionPanel();
+      if(typeof window.tdgPOSEnsureTransactions==='function')window.tdgPOSEnsureTransactions();
       const target=document.getElementById('tdgPOSTransactionsPanel');
       if(target){
         target.scrollIntoView({behavior:'smooth',block:'start'});
