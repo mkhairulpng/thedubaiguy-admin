@@ -52,6 +52,7 @@ module.exports = async function handler(req, res) {
       case 'orders': fn = load('orders.js'); break;
       case 'customers': fn = load('customers.js'); break;
       case 'aura': fn = load('aura.js'); break;
+      case 'email-card': fn = load('email-card.js'); break;
       case 'sync': fn = load('sync.js'); break;
       case 'analytics': fn = load('analytics.js'); break;
       case 'live': fn = load('live.js'); break;
