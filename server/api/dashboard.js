@@ -1182,7 +1182,198 @@ new MutationObserver(function(){requestAnimationFrame(tdgMatchPaymentHeadings)})
 })();
 </script>`;
 
-  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+adminOperationsPatch+posReliabilityPatch+auraReliabilityPatch+'</body>');
+
+  const finalReliabilityPatch=String.raw\`
+<style id="tdg-final-pos-aura">
+.tdg-pos-live-card{position:relative!important;cursor:pointer!important;pointer-events:auto!important}
+.tdg-pos-live-add{position:relative!important;z-index:5!important;pointer-events:auto!important;cursor:pointer!important}
+.tdg-pos-live-card[aria-disabled="true"]{pointer-events:auto!important}
+.tdg-aura-direct-modal{position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+.tdg-aura-direct-card{width:min(980px,96vw);max-height:90vh;overflow:auto;background:#211c18;color:var(--text);border:1px solid var(--line);border-radius:16px;padding:20px}
+.tdg-aura-direct-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.tdg-aura-direct-grid input,.tdg-aura-direct-grid select{width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text)}
+.tdg-aura-direct-wide{grid-column:1/-1}
+.tdg-aura-direct-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.tdg-aura-direct-table{width:100%;border-collapse:collapse;margin-top:18px;font-size:10px}
+.tdg-aura-direct-table th,.tdg-aura-direct-table td{padding:8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+.tdg-aura-direct-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+@media(max-width:650px){.tdg-aura-direct-grid{grid-template-columns:1fr}.tdg-aura-direct-wide{grid-column:auto}}
+</style>
+<script>
+(function(){
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+  function products(){return Array.isArray(window.tdgPOSProducts)?window.tdgPOSProducts:[]}
+  function cart(){if(!Array.isArray(window.tdgPOSCart))window.tdgPOSCart=[];return window.tdgPOSCart}
+  function stock(p){const n=Number(p&&p.qty);return Number.isFinite(n)?Math.max(0,n):(p&&p.soldout?0:1)}
+
+  window.tdgAddPOS=function(id){
+    const p=products().find(function(x){return String(x.id)===String(id)});
+    if(!p){alert('Product is no longer available. Refresh the Cashier POS.');return}
+    const available=stock(p), c=cart();
+    const existing=c.find(function(x){return String(x.id)===String(p.id)});
+    const current=Number(existing&&existing.qty||0);
+    if(available<=0){alert((p.name||'This product')+' is sold out.');return}
+    if(current+1>available){alert('Not enough stock for '+(p.name||'this product')+'. Only '+available+' available.');return}
+    if(existing)existing.qty=current+1;else c.push(Object.assign({},p,{qty:1}));
+    if(typeof window.tdgRenderPOSCart==='function')window.tdgRenderPOSCart();
+    window.dispatchEvent(new CustomEvent('tdg:pos-cart-updated',{detail:{product:p,cart:c}}));
+  };
+
+  window.tdgRenderPOS=async function(){
+    const box=document.getElementById('tdgPOSProducts');
+    if(!box)return;
+    box.classList.add('tdg-pos-live-grid');
+    box.innerHTML='<div class="tdg-empty">Loading live products…</div>';
+    try{
+      const d=await tdgJSON('/api/products');
+      const live=Array.isArray(d&&d.data)?d.data:(Array.isArray(d)?d:[]);
+      if(!live.length)throw new Error('No active products were returned.');
+      window.tdgPOSProducts=live;
+    }catch(e){
+      box.innerHTML='<div class="tdg-empty">Products could not be loaded: '+esc(e.message)+'</div>';
+      return;
+    }
+    const q=String((document.getElementById('tdgPOSSearch')||{}).value||'').toLowerCase().trim();
+    const cat=window.tdgPOSCategory||'all';
+    const rows=products().filter(function(p){
+      const pc=String(p.category||p.cat||'').toLowerCase();
+      const cm=cat==='all'||pc===cat||(cat==='perfumes'&&pc==='perfume')||(cat==='perfume'&&pc==='perfumes');
+      return cm && (!q||String(p.name||'').toLowerCase().includes(q)||String(p.id||'').toLowerCase().includes(q));
+    }).slice(0,100);
+    const imageFor=function(p){
+      try{
+        const a=Array.isArray(p.images)?p.images:(Array.isArray(p.imgs)?p.imgs:[]);
+        const key=a[0]||p.image||p.img||'';
+        return key?'/api/product-image?id='+encodeURIComponent(String(key)):'';
+      }catch(e){return ''}
+    };
+    box.innerHTML=rows.map(function(p){
+      const n=stock(p), sold=n<=0, id=esc(p.id), image=imageFor(p);
+      return '<div class="tdg-pos-live-card'+(sold?' tdg-pos-soldout':'')+'" data-final-pos-id="'+id+'" role="button" tabindex="'+(sold?-1:0)+'">'+
+        '<div class="tdg-pos-live-image">'+
+        (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||'Product')+'" loading="lazy" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\';">':'')+
+        '<span class="tdg-pos-image-placeholder" style="display:'+(image?'none':'flex')+'">Image unavailable</span></div>'+
+        '<div class="tdg-pos-live-body"><div class="tdg-pos-live-name">'+esc(p.name||'Product')+'</div><div class="tdg-pos-live-price">S$'+Number(p.price||0).toFixed(2)+'</div><div class="tdg-pos-live-stock '+(sold?'tdg-pos-sold-label':'tdg-pos-in-stock')+'">'+(sold?'0 in stock':n+' in stock')+'</div></div>'+
+        '<button type="button" class="tdg-pos-live-add" data-final-pos-add="'+id+'" '+(sold?'disabled':'')+'>'+(sold?'Sold Out':'+ Add')+'</button></div>';
+    }).join('')||'<div class="tdg-pos-category-empty">No products found.</div>';
+    const count=document.getElementById('tdgPOSProductCount');
+    if(count)count.textContent='Showing '+rows.length+' of '+products().length+' products';
+    if(typeof window.tdgRenderPOSCart==='function')window.tdgRenderPOSCart();
+  };
+
+  window.tdgPOSCheckout=async function(){
+    const c=cart();
+    if(!c.length){alert('Select at least one product.');return}
+    const name=String((document.getElementById('tdgPOSCustomer')||{}).value||'').trim();
+    const mobile=String((document.getElementById('tdgPOSMobile')||{}).value||'').trim();
+    if(!name){alert('Enter the customer name.');return}
+    const payment=String(window.tdgPOSSelectedPayment||'NETS').toUpperCase();
+    const total=c.reduce(function(a,p){return a+Number(p.price||0)*Number(p.qty||1)},0);
+    try{
+      const d=await tdgJSON('/api/pos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        customer:{name,mobile},
+        membership_id:String((document.getElementById('tdgPOSMembership')||{}).value||'').trim(),
+        aura_membership:String((document.getElementById('tdgPOSAura')||{}).value||'').trim(),
+        items:c.map(function(p){return{id:String(p.id),qty:Number(p.qty||1),size:'',color:''}}),
+        payment_method:payment,total:total
+      })});
+      alert('Sale completed: '+String(d&&d.data&&d.data.order_number||'Created')+' · S$'+Number(d&&d.data&&d.data.total||total).toFixed(2)+' · '+payment);
+      window.tdgPOSCart=[];
+      ['tdgPOSCustomer','tdgPOSMobile','tdgPOSMembership','tdgPOSAura'].forEach(function(id){const e=document.getElementById(id);if(e)e.value=''});
+      if(typeof window.tdgPOSPayment==='function')window.tdgPOSPayment('NETS');else window.tdgPOSSelectedPayment='NETS';
+      await window.tdgRenderPOS();
+    }catch(e){alert('POS sale could not be completed: '+(e.message||e))}
+  };
+
+  function bindPOS(){
+    const box=document.getElementById('tdgPOSProducts');
+    if(!box)return;
+    if(box.dataset.finalDelegated!=='1'){
+      box.dataset.finalDelegated='1';
+      box.addEventListener('click',function(e){
+        const add=e.target.closest&&e.target.closest('[data-final-pos-add]');
+        if(add){e.preventDefault();e.stopPropagation();if(!add.disabled)window.tdgAddPOS(add.getAttribute('data-final-pos-add'));return}
+        const card=e.target.closest&&e.target.closest('[data-final-pos-id]');
+        if(card){const id=card.getAttribute('data-final-pos-id');if(id&&!card.classList.contains('tdg-pos-soldout'))window.tdgAddPOS(id)}
+      });
+      box.addEventListener('keydown',function(e){
+        if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-final-pos-id]')){e.preventDefault();const card=e.target.closest('[data-final-pos-id]');if(!card.classList.contains('tdg-pos-soldout'))window.tdgAddPOS(card.getAttribute('data-final-pos-id'))}
+      });
+    }
+  }
+
+  function bootPOS(){
+    const box=document.getElementById('tdgPOSProducts');
+    if(!box)return;
+    bindPOS();
+    if(!box.dataset.finalRendered)window.tdgRenderPOS().finally(function(){box.dataset.finalRendered='1'});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootPOS,{once:true});else bootPOS();
+  new MutationObserver(function(){bindPOS();if(document.getElementById('tdgPOSProducts')){const b=document.getElementById('tdgPOSProducts');if(!b.dataset.finalRendered&&b.children.length)bootPOS()}}).observe(document.documentElement,{subtree:true,childList:true});
+
+  async function auraData(){const d=await tdgJSON('/api/aura');return Array.isArray(d&&d.giftcards)?d.giftcards:[]}
+  function auraModal(){
+    const old=document.getElementById('tdgAuraDirectModal');if(old)old.remove();
+    const m=document.createElement('div');m.id='tdgAuraDirectModal';m.className='tdg-aura-direct-modal';
+    m.innerHTML='<div class="tdg-aura-direct-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">AURA MEMBERSHIP</h3><button type="button" id="da-close">Close</button></div>'+
+      '<p style="font-size:10px;color:var(--muted)">Create and manage AURA membership cards. The membership ID is tied to the customer mobile number.</p>'+
+      '<div class="tdg-aura-direct-grid"><input id="da-name" placeholder="Customer name *"><input id="da-mobile" placeholder="Mobile number *"><input id="da-email" placeholder="Customer email"><input id="da-balance" type="number" min="0" step=".01" value="0" placeholder="Balance"><select id="da-status"><option>ACTIVE</option><option>PAUSED</option><option>REVOKED</option></select><input id="da-notes" class="tdg-aura-direct-wide" placeholder="Notes"></div>'+
+      '<div class="tdg-aura-direct-actions"><button type="button" id="da-save">Create AURA Membership</button></div><div id="da-message"></div>'+
+      '<table class="tdg-aura-direct-table"><thead><tr><th>Membership ID</th><th>Customer</th><th>Mobile</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead><tbody id="da-body"><tr><td colspan="6">Loading…</td></tr></tbody></table></div>';
+    document.body.appendChild(m);
+    m.querySelector('#da-close').onclick=function(){m.remove()};
+    async function load(){
+      const rows=await auraData();
+      m.querySelector('#da-body').innerHTML=rows.map(function(x){return '<tr><td class="tdg-aura-direct-id">'+esc(x.card_number)+'</td><td>'+esc(x.customer_name)+'</td><td>'+esc(x.customer_mobile||'—')+'</td><td>S$'+Number(x.balance||0).toFixed(2)+'</td><td>'+esc(x.status||'ACTIVE')+'</td><td><button type="button" data-edit="'+esc(x.id)+'">Edit</button></td></tr>'}).join('')||'<tr><td colspan="6">No AURA records yet.</td></tr>';
+      m.querySelectorAll('[data-edit]').forEach(function(btn){btn.onclick=function(){
+        const x=rows.find(function(r){return String(r.id)===String(btn.getAttribute('data-edit'))});if(!x)return;
+        m.querySelector('#da-name').value=x.customer_name||'';m.querySelector('#da-mobile').value=x.customer_mobile||'';m.querySelector('#da-email').value=x.customer_email||'';m.querySelector('#da-balance').value=Number(x.balance||0);m.querySelector('#da-status').value=x.status||'ACTIVE';m.querySelector('#da-notes').value=x.notes||'';
+        const save=m.querySelector('#da-save');save.textContent='Save AURA Membership';save.dataset.editId=x.id;
+      }});
+    }
+    m.querySelector('#da-save').onclick=async function(){
+      const b=this, edit=b.dataset.editId;
+      const payload={name:m.querySelector('#da-name').value.trim(),email:m.querySelector('#da-email').value.trim(),mobile:m.querySelector('#da-mobile').value.trim(),balance:Number(m.querySelector('#da-balance').value||0),status:m.querySelector('#da-status').value,notes:m.querySelector('#da-notes').value.trim()};
+      if(!payload.name||!payload.mobile){alert('Customer name and mobile number are required.');return}
+      b.disabled=true;
+      try{
+        let d;
+        if(edit)d=await tdgJSON('/api/aura',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:edit,customer_name:payload.name,customer_email:payload.email,customer_mobile:payload.mobile,balance:payload.balance,status:payload.status,notes:payload.notes,membership_type:'AURA'})});
+        else d=await tdgJSON('/api/aura',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:payload.name,email:payload.email,mobile:payload.mobile,balance:payload.balance,status:payload.status,notes:payload.notes,membership_type:'AURA'})});
+        const id=d&&d.data&&d.data.card_number||'';
+        m.querySelector('#da-message').innerHTML='<div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:8px">Saved: <strong class="tdg-aura-direct-id">'+esc(id)+'</strong></div>';
+        b.textContent='Create AURA Membership';delete b.dataset.editId;b.disabled=false;
+        ['da-name','da-mobile','da-email','da-notes'].forEach(function(id){m.querySelector('#'+id).value=''});m.querySelector('#da-balance').value='0';m.querySelector('#da-status').value='ACTIVE';
+        await load();
+      }catch(e){b.disabled=false;alert(e.message||'AURA membership could not be saved')}
+    };
+    load().catch(function(e){m.querySelector('#da-body').innerHTML='<tr><td colspan="6">'+esc(e.message)+'</td></tr>'});
+  }
+
+  function bindAuraManage(){
+    document.querySelectorAll('button,a,[role="button"]').forEach(function(n){
+      const t=(n.textContent||'').trim().toLowerCase();
+      if(!/^(aura|aura membership)$/.test(t))return;
+      if(n.dataset.finalAuraBound)return;
+      n.dataset.finalAuraBound='1';
+      const b=document.createElement('button');b.type='button';b.className='tdg-aura-add-button';b.textContent='+ Add';
+      b.onclick=function(e){e.preventDefault();e.stopPropagation();auraModal()};
+      n.insertAdjacentElement('afterend',b);
+    });
+    document.querySelectorAll('.tdg-admin-nav-action').forEach(function(n){
+      if((n.textContent||'').trim().toLowerCase()!=='manage'||n.dataset.finalAuraManage)return;
+      const prev=n.previousElementSibling;
+      const t=(prev&&prev.textContent||'').trim().toLowerCase();
+      if(t==='aura'||t==='aura membership'||t==='gift cards'){
+        n.dataset.finalAuraManage='1';n.onclick=function(e){e.preventDefault();e.stopPropagation();auraModal()};
+      }
+    });
+  }
+  bindAuraManage();
+  new MutationObserver(bindAuraManage).observe(document.documentElement,{subtree:true,childList:true});
+})();
+</script>\`;
+  return html.replace('</body>','<script src="/product-images.js"></script><script src="/product-categories.js"></script>'+kpiCompactPatch+auraPatch+compactPatch+auraContentPatch+topLeftLogoPatch+auraKpiExactPatch+auraKpiMirrorPatch+netsSettlementPatch+auraWordmarkPatch+observabilityPatch+posRefundTopPatch+posFixPatch+adminOperationsPatch+posReliabilityPatch+auraReliabilityPatch+finalReliabilityPatch+'</body>');
 }
 
 module.exports=(req,res)=>{
