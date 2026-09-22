@@ -14,8 +14,12 @@ module.exports=async function(req,res){
     if(req.method==='GET'&&route==='payment-summary'){
       if(!requireAdmin(req,res))return;
       const stripe=client();
-      const dayStart=new Date();
-      dayStart.setHours(0,0,0,0);
+      const tz='Asia/Singapore';
+      const now=new Date();
+      const parts=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+      const getPart=k=>parts.find(x=>x.type===k)?.value;
+      const dayKey=getPart('year')+'-'+getPart('month')+'-'+getPart('day');
+      const dayStart=new Date(dayKey+'T00:00:00+08:00');
       const dayEnd=new Date(dayStart.getTime()+86400000);
       const stripeData=await stripe.paymentIntents.list({
         limit:100,
@@ -46,9 +50,16 @@ module.exports=async function(req,res){
       }else{
         dbError='Database is not configured. Add DATABASE_URL (or POSTGRES_URL) in Vercel Production.';
       }
-      return json(res,200,{ok:true,databaseConfigured:dbConfigured,databaseError:dbError,
+      const balance=await stripe.balance.retrieve();
+      const payouts=await stripe.payouts.list({limit:5});
+      const available=(balance.available||[]).reduce((n,x)=>n+Number(x.amount||0)/100,0);
+      const pending=(balance.pending||[]).reduce((n,x)=>n+Number(x.amount||0)/100,0);
+      return json(res,200,{ok:true,databaseConfigured:dbConfigured,databaseError:dbError,timeZone:tz,businessDate:dayKey,
         total:Number(nets.amount)+Number(paynow.amount)+Number(stripeAmount),count:nets.count+paynow.count+stripePaid.length,
-        nets,paynow,stripe:{amount:Number(stripeAmount),count:stripePaid.length,source:'Stripe PaymentIntents'}});
+        nets,paynow,
+        stripe:{amount:Number(stripeAmount),count:stripePaid.length,source:'Stripe PaymentIntents',available,pending,currency:'SGD'},
+        balance:{available:balance.available||[],pending:balance.pending||[]},
+        payouts:payouts.data||[]});
     }
 
     const stripe=client();
